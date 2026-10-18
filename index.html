@@ -78,7 +78,7 @@
         <section class="section" id="section-strategy">
           <div class="section-head">
             <h2>策略回测</h2>
-            <p class="section-caption">每场 50 券，固定选边。</p>
+            <p class="section-caption">以下策略按每场 50 券评估，固定选边。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
@@ -137,6 +137,10 @@
             </div>
           </div>
           <div class="panel table-panel">
+            <div class="panel-title">赔率观测</div>
+            <div class="table-wrap" id="odds-points-table"></div>
+          </div>
+          <div class="panel table-panel">
             <div class="panel-title">支持率分档</div>
             <div class="table-wrap" id="bucket-table"></div>
           </div>
@@ -145,10 +149,10 @@
         <section class="section" id="section-god">
           <div class="section-head">
             <h2>上帝视角</h2>
-            <p class="section-caption">假设提前知道胜负，并可以攒券集中下注。</p>
+            <p class="section-caption">理论上界：假设提前知道胜负，并可以攒券集中下注。</p>
           </div>
           <div class="panel table-panel">
-            <div class="panel-title">最优计划</div>
+            <div class="panel-title">上界计划</div>
             <div class="table-wrap" id="god-plan-table"></div>
             <div class="prefix-strip" id="god-prefixes"></div>
           </div>
@@ -166,13 +170,13 @@
           <div class="panel table-panel">
             <div class="table-wrap" id="match-table"></div>
           </div>
-          <details class="method-details">
-            <summary>方法与口径</summary>
+          <div class="method-block">
+            <h3>方法与口径</h3>
             <div class="method-grid">
               <div id="method-notes"></div>
               <div id="caveats"></div>
             </div>
-          </details>
+          </div>
         </section>
       </section>
     </main>

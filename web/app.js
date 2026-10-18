@@ -502,12 +502,36 @@
     const majority = byId.majority;
     const items = [];
 
+    const majorityMults = majority.rows.filter((r) => r.win).map((r) => r.mult);
+    const majorityMin = majorityMults.length ? Math.min(...majorityMults) : null;
+    const majorityMax = majorityMults.length ? Math.max(...majorityMults) : null;
+    const majorityRange = majorityMin === null ? '—'
+      : (majorityMin === majorityMax ? `${majorityMin} 倍` : `${majorityMin}–${majorityMax} 倍`);
     const minorityMults = [...new Set(minority.rows.filter((r) => r.win).map((r) => r.mult))]
       .sort((a, b) => a - b);
-    items.push(`押冷门目前 <b>${fmt(minority.total)}</b> 分：${minority.wins}/${model.matches.length} 次命中，胜场倍率 ${minorityMults.map((m) => `${m}×`).join(' / ') || '—'}。样本只有 ${model.matches.length} 场，不能当作稳定优势。`);
-    items.push(`热门方 ${majority.wins}/${model.matches.length} 胜，但胜场平均只有 ${fmt1(majority.avgWinMult)} 倍，总分 ${fmt(majority.total)}。胜率高不等于得分高。`);
-    items.push(`抛硬币选边有 <b>${pct(result.coin.stats.pFull)}</b> 的概率达到 ${fmt(model.full)} 分；按支持率加权只有 <b>${pct(result.support.stats.pFull)}</b>。`);
-    items.push(`提前知道结果并集中下注，最高 <b>${fmt(result.god.total)}</b> 分；已用 ${fmt(result.god.used)} 券。`);
+    const minorityText = minorityMults.length === 1
+      ? `全部为 ${minorityMults[0]} 倍`
+      : `为 ${minorityMults.join(' / ')} 倍`;
+    items.push(`热门方 ${majority.wins}/${model.matches.length} 胜，胜场倍率 ${majorityRange}；冷门方 ${minority.wins} 次获胜${minorityText}。`);
+
+    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：抛硬币 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}。`);
+
+    const byOdds = new Map();
+    for (const point of result.buckets.oddsPoints) {
+      if (!byOdds.has(point.odds)) byOdds.set(point.odds, []);
+      byOdds.get(point.odds).push(point.support);
+    }
+    const segments = [...byOdds.entries()]
+      .sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]))
+      .map(([odds, supports]) => {
+        const min = Math.min(...supports);
+        const max = Math.max(...supports);
+        return `${min === max ? `${min}%` : `${min}–${max}%`} 为 ${odds} 倍`;
+      });
+    items.push(`支持率与赔率呈阶梯关系：${segments.join('，')}。`);
+
+    const oracle = result.deterministic.find((s) => s.id === 'oracle-fixed');
+    items.push(`上帝视角上界 ${fmt(result.god.total)}；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
     return items;
   }
 
@@ -554,10 +578,10 @@
     return `<table>${options.caption ? `<caption>${esc(options.caption)}</caption>` : ''}<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
   }
 
-  function kpi(label, value, sub, accent = '') {
+  function kpi(label, value, sub, accent = '', compact = false) {
     return `<article class="kpi ${accent}">
       <div class="kpi-label">${esc(label)}</div>
-      <div class="kpi-value">${value}</div>
+      <div class="kpi-value ${compact ? 'compact' : ''}">${value}</div>
       <div class="kpi-sub">${sub}</div>
     </article>`;
   }
@@ -608,24 +632,24 @@
     setText('#hero-title', model.name);
     setText('#activity-meta-main', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
     setText('#activity-meta-updated', `更新于 ${model.lastUpdated}`);
-    setText('#overview-caption', `每场 ${model.stake} 券 · 当前 ${model.matches.length} 场`);
+    setText('#overview-caption', '基于已记录场次');
     setText('#data-caption', `已记录 ${model.matches.length} 场 · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
-    const naive = result.deterministic.filter((s) => !s.reference);
-    const best = [...naive].sort((a, b) => b.total - a.total)[0];
-    const fullReached = naive.filter((s) => s.total >= model.full).length;
-    const lastDay = model.days[model.days.length - 1] || 0;
+    const fixed = result.deterministic.filter((s) => !s.reference);
+    const scores = fixed.map((s) => s.total);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
     const kpis = [
       kpi('已记录', `${model.days.length}<span class="unit">/ ${model.totalDays} 天</span>`,
-        `${model.matches.length} / ${model.expectedMatches} 场 · 每场 ${model.stake} 券`),
+        `${model.matches.length} / ${model.expectedMatches} 场`),
       kpi('满奖励线', fmt(model.full),
-        `${naive.length} 个固定策略中 ${fullReached} 个已达`, 'accent'),
-      kpi('当前领先', fmt(best?.total || 0),
-        best ? `${shortName(best.name)} · ${best.wins}/${model.matches.length} 胜 · 胜场均 ${fmt1(best.avgWinMult)} 倍` : '—'),
-      kpi('上帝视角上限', fmt(result.god.total),
-        `已用 ${fmt(result.god.used)} 券 · 截至第 ${lastDay} 天`)
+        `原始奖励线 ${fmt(model.original)}`, 'accent'),
+      kpi('固定 50 券范围', `${fmt(minScore)}–${fmt(maxScore)}`,
+        '四种选边方式', '', true),
+      kpi('上帝视角上界', fmt(result.god.total),
+        `已用 ${fmt(result.god.used)} 券`)
     ];
     $('#kpis').innerHTML = kpis.join('');
   }
@@ -646,7 +670,7 @@
       return {
         __class: s.reference ? 'ref-row' : '',
         cells: [
-          `${esc(s.name)}${s.reference ? '<span class="sub-line">固定 50 券的参考上限</span>' : ''}`,
+          `${esc(s.name)}${s.reference ? '<span class="sub-line">固定 50 券的参考上界</span>' : ''}`,
           `<span class="${s.reference ? 'gold' : ''}">${fmt(s.total)}</span>`,
           fmt(s.bonus),
           `${s.wins}/${model.matches.length}`,
@@ -661,7 +685,7 @@
       ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '抛硬币分位', '加权分位'],
       rows,
       [1, 2, 3, 4, 6, 7]
-    ) + `<p class="table-note">分位 = 该随机策略得分不超过此得分的概率。固定策略是事后选出的，不能当作预测。</p>`;
+    ) + `<p class="table-note">分位 = 该随机策略得分不超过此得分的概率。</p>`;
   }
 
   function renderRandomTable(model, result) {
@@ -690,19 +714,40 @@
     ) + `<p class="table-note">按支持率加权：每场按双方支持率随机选边。</p>`;
   }
 
+  function renderOddsPointsTable(model, result) {
+    const points = [...result.buckets.oddsPoints]
+      .sort((a, b) => a.support - b.support || b.odds - a.odds);
+    const loserCount = result.buckets.oddsPoints.filter((p) => p.role === 'loser').length;
+    const rows = points.map((point) => {
+      const source = point.match
+        ? `第 ${point.match.day} 天 · 第 ${point.match.match} 场 · ${SIDE_LABEL[point.side]}`
+        : '—';
+      const role = point.role === 'winner' ? '胜方' : '已知败方';
+      return {
+        cells: [
+          `${point.support}%`,
+          `${point.odds}×`,
+          `${source} · ${role}`
+        ]
+      };
+    });
+    $('#odds-points-table').innerHTML = table(
+      ['支持率', '赔率', '来源'],
+      rows,
+      [0, 1]
+    ) + `<p class="table-note">按支持率升序排列。败方赛前赔率目前记录了 ${loserCount} 个。</p>`;
+  }
+
   function renderBucketTable(model, result) {
     const rows = result.buckets.buckets.map((b) => {
-      const points = b.points
-        .slice()
-        .sort((a, b2) => a.support - b2.support)
-        .map((p) => `${p.support}%→${p.odds}×`)
-        .join('、');
-      const odds = [...new Set(b.points.map((p) => p.odds))].sort((a, b2) => a - b2).join(' / ');
+      const odds = [...new Set(b.points.map((p) => p.odds))]
+        .sort((a, b2) => a - b2)
+        .map((o) => `${o}×`)
+        .join(' / ');
       const fav = b.favoriteN ? `${b.favoriteWins}/${b.favoriteN}` : '—';
       return {
         cells: [
           `${b.min}–${b.max}%`,
-          points || '<span class="faint">—</span>',
           odds || '<span class="faint">—</span>',
           b.points.length || '—',
           fav
@@ -710,10 +755,10 @@
       };
     });
     $('#bucket-table').innerHTML = table(
-      ['支持率区间', '观测点（支持率→赔率）', '倍率', '赔率点', '热门方胜率'],
+      ['支持率区间', '倍率', '赔率点', '热门方胜率'],
       rows,
-      [2, 3, 4]
-    ) + `<p class="table-note">共 ${result.buckets.oddsPoints.length} 个赔率点，其中 ${result.buckets.oddsPoints.filter((p) => p.role === 'loser').length} 个是已知的败方赛前赔率。败方赔率大多未记录。</p>`;
+      [1, 2, 3]
+    ) + `<p class="table-note">空档表示该区间还没有赔率记录。</p>`;
   }
 
   function renderGodPlan(model, result) {
@@ -759,7 +804,7 @@
     );
     $('#god-prefixes').innerHTML = `<span>如果只考虑到当天：</span>` +
       result.godPrefixes.map((g) => `<span class="pill"><b>D${g.horizon}</b> ${fmt(g.total)}</span>`).join('<span class="arrow">→</span>') +
-      `<span class="muted" style="margin-left:6px">最优计划可能不同</span>`;
+      `<span class="muted" style="margin-left:6px">上界可能不同</span>`;
   }
 
   function renderMatchTable(model) {
@@ -780,37 +825,32 @@
           odds,
           settlement,
           `<span class="${m.winner === 'left' ? 'gold' : 'jade'}">${SIDE_LABEL[m.winner]}</span>`,
-          `${m.winnerMult}×`,
           type
         ]
       };
     });
     $('#match-table').innerHTML = table(
-      ['天', '场', '支持率（左:右）', '赛前赔率', '结算倍率（左:右）', '胜方', '胜方倍率', '类型'],
+      ['天', '场', '支持率（左:右）', '赛前赔率', '结算倍率（左:右）', '胜方', '类型'],
       rows,
-      [2, 3, 4, 6]
+      [2, 3, 4]
     ) + `<p class="table-note">— 表示未记录。另有 ${model.missingLoserOdds} 个败方赛前赔率缺失。</p>`;
   }
 
   function renderMethodNotes(model, result) {
-    const states = result.coin.stats.states;
-    const emptyBuckets = result.buckets.buckets
-      .filter((b) => b.points.length === 0)
-      .map((b) => `${b.min}–${b.max}%`);
-    const minorityWins = result.deterministic.find((s) => s.id === 'minority')?.wins ?? 0;
     $('#method-notes').innerHTML = `<ul>
       <li><strong>得分</strong>：押 n 券，按结算倍率获得积分；押错固定 10 倍。</li>
-      <li><strong>固定策略</strong>：每场 ${model.stake} 券，比较全押左、全押右、押热门、押冷门。</li>
-      <li><strong>随机策略</strong>：每场按概率选边，穷举所有可能结果，共 ${states} 种得分。</li>
-      <li><strong>上帝视角</strong>：假设提前知道胜负；每天开始时发 ${model.dailyGrant} 券，最多持有 ${model.holdingCap} 券，可以攒券集中下注。</li>
-      <li><strong>奖励线</strong>：${fmt(model.original)} 分拿满原始奖励；${fmt(model.full)} 分拿满全部奖励。</li>
+      <li><strong>固定策略</strong>：每场 50 券，比较全押左、全押右、押热门、押冷门四种选边方式。</li>
+      <li><strong>随机策略</strong>：每场按概率选边，穷举所有可能结果。</li>
+      <li><strong>上帝视角上界</strong>：假设提前知道胜负；每天开始时发 ${model.dailyGrant} 券，最多持有 ${model.holdingCap} 券，可以攒券集中下注。</li>
+      <li><strong>奖励线</strong>：${fmt(model.original)} 分原始奖励；${fmt(model.full)} 分满奖励。</li>
+      <li><strong>回测范围</strong>：已记录 ${model.matches.length} 场。</li>
     </ul>`;
     $('#caveats').innerHTML = `<ul>
-      <li>随机策略只让选边随机，比赛结果按已记录事实固定，不是预测。</li>
-      <li>押热门/冷门使用收盘支持率；现实中只能在临近收盘时决定。</li>
-      <li>目前只有 ${model.matches.length} 场，冷门策略的领先主要来自 ${minorityWins} 次获胜，样本量不足。</li>
-      <li>支持率—倍率关系仍有空档${emptyBuckets.length ? `（${emptyBuckets.join('、')}）` : ''}；败方赛前赔率大多未记录。</li>
-      <li>上帝视角基于已记录场次，后续比赛可能改变最优计划。</li>
+      <li>每场 50 券是被评估策略的假设，不是活动规则。</li>
+      <li>随机策略只让选边随机，比赛结果按已记录事实固定。</li>
+      <li>押热门/冷门以收盘支持率为准。</li>
+      <li>上帝视角是理论上界，不是可执行策略。</li>
+      <li>败方赛前赔率大多未记录，赔率观测中只包含已知点。</li>
     </ul>`;
   }
 
@@ -1462,6 +1502,7 @@
     renderInsights(result);
     renderStrategyTable(model, result);
     renderRandomTable(model, result);
+    renderOddsPointsTable(model, result);
     renderBucketTable(model, result);
     renderGodPlan(model, result);
     renderMatchTable(model);

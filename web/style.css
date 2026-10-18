@@ -75,6 +75,7 @@ code { font-family: var(--font-mono); }
 .page {
   width: min(1200px, calc(100% - 64px));
   margin: 0 auto;
+  padding-bottom: 96px;
 }
 
 /* ---------- top bar ---------- */
@@ -384,6 +385,11 @@ html[data-theme="dark"] .icon-moon { display: none; }
   letter-spacing: 0;
 }
 
+.kpi-value.compact {
+  font-size: clamp(20px, 2.1vw, 27px);
+  letter-spacing: -.03em;
+}
+
 /* ---------- insights ---------- */
 
 .insights-panel { margin-top: 14px; }
@@ -568,25 +574,23 @@ tbody tr:hover { background: var(--surface-2); }
 
 /* ---------- method ---------- */
 
-.method-details {
-  margin-top: 24px;
-  padding-top: 16px;
+.method-block {
+  margin-top: 36px;
+  padding-top: 24px;
   border-top: 1px solid var(--line);
 }
 
-.method-details summary {
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
+.method-block h3 {
+  margin: 0 0 16px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
 }
-
-.method-details summary:hover { color: var(--accent); }
 
 .method-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 28px;
-  margin-top: 18px;
 }
 
 .method-grid ul {
