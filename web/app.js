@@ -629,7 +629,7 @@
       badgeWrap.className = model.warnings.length ? 'badge warn' : 'badge gold';
     }
     setText('#overview-caption', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场 · 每场 ${model.stake} 券`);
-    setText('#data-caption', `最后更新 ${model.lastUpdated} · JSON ${url.split('/').pop()} · 记录来源 ${model.dataSource || '—'} · 赔率点 ${result.buckets.oddsPoints.length} 个`);
+    setText('#data-caption', `${url.split('/').pop()} · 记录 ${model.dataSource || '—'} · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
@@ -897,13 +897,17 @@
   function legendStyle(p, data) {
     return {
       data,
+      type: 'scroll',
       top: 0,
       left: 0,
       itemWidth: 12,
       itemHeight: 7,
       icon: 'roundRect',
       textStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 11 },
-      inactiveColor: p.faint
+      inactiveColor: p.faint,
+      pageIconColor: p.gold,
+      pageIconInactiveColor: p.faint,
+      pageTextStyle: { color: p.muted, fontFamily: FONT_MONO, fontSize: 10 }
     };
   }
 
