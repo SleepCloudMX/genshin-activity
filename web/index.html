@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="原神 7.1 上半「判测胜券本征」支持率、倍率与下注策略分析">
+  <link rel="icon" href="data:,">
+  <title>判测胜券本征 · 支持率与倍率分析</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('activity-analysis-theme') || 'dark';
+    } catch (e) {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="hero reveal" style="--delay:0ms">
+      <div class="hero-main">
+        <div class="eyebrow">原神 · 7.1 上半</div>
+        <h1 class="hero-title">判测胜券本征</h1>
+        <p class="hero-sub">支持率 × 倍率 · 固定 50 券策略回测 · 随机分布 · 上帝视角</p>
+      </div>
+      <aside class="hero-card" aria-label="数据状态">
+        <div class="hero-card-head">
+          <span class="badge gold" id="status-badge-wrap">
+            <span class="dot"></span>
+            <span id="status-badge">正在读取</span>
+          </span>
+          <span class="badge" id="last-updated">更新 —</span>
+        </div>
+        <dl class="hero-meta">
+          <dt>活动</dt><dd id="meta-activity">—</dd>
+          <dt>数据源</dt><dd id="meta-source">—</dd>
+          <dt>倍率规则</dt><dd id="meta-multiplier">—</dd>
+          <dt>得分规则</dt><dd id="meta-score">—</dd>
+        </dl>
+        <div class="hero-actions">
+          <button class="btn" id="reload-btn" type="button">重新加载数据</button>
+          <button class="btn" id="theme-btn" type="button">切换亮色</button>
+        </div>
+      </aside>
+    </header>
+
+    <main id="main">
+      <div class="loading" id="loading">正在读取 JSON 数据…</div>
+      <div class="notice hidden" id="error-panel" role="alert"></div>
+      <div class="notice warn hidden" id="warning-panel" role="status"></div>
+
+      <section class="section reveal" id="section-overview" style="--delay:80ms">
+        <div class="section-head">
+          <span class="section-index">01</span>
+          <h2 class="section-title">概览</h2>
+          <p class="section-caption" id="overview-caption">—</p>
+        </div>
+        <div class="kpi-grid" id="kpis"></div>
+        <div class="panel insights-panel">
+          <div class="panel-kicker">自动结论</div>
+          <div class="insights" id="insights"></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="section-strategy" style="--delay:140ms">
+        <div class="section-head">
+          <span class="section-index">02</span>
+          <h2 class="section-title">策略回测</h2>
+          <p class="section-caption" id="strategy-caption">每场固定 50 券，比较四种朴素选边方式；另附全押中的固定 50 参考上限。</p>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-kicker">累计得分</div>
+            <div class="chart tall" id="strategy-cum-chart" role="img" aria-label="各固定策略累计得分曲线"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-kicker">得分构成：保底 + 加成</div>
+            <div class="chart tall" id="strategy-final-chart" role="img" aria-label="各固定策略得分构成"></div>
+          </div>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">策略汇总</div>
+          <div class="table-wrap" id="strategy-table"></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="section-random" style="--delay:200ms">
+        <div class="section-head">
+          <span class="section-index">03</span>
+          <h2 class="section-title">随机策略分布</h2>
+          <p class="section-caption" id="random-caption">随机性只来自选边；比赛结果按已记录事实固定。分布为精确卷积，不是蒙特卡洛。</p>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-kicker">最终得分分布</div>
+            <div class="chart tall" id="hist-chart" role="img" aria-label="随机策略最终得分直方图"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-kicker">累计分布函数 CDF</div>
+            <div class="chart tall" id="cdf-chart" role="img" aria-label="随机策略累计分布函数"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-kicker">逐日累计分位带 · 阴影为 P20–P80</div>
+          <div class="chart tall" id="daily-band-chart" role="img" aria-label="随机策略逐日累计分位带"></div>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">随机策略统计</div>
+          <div class="table-wrap" id="random-table"></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="section-odds" style="--delay:260ms">
+        <div class="section-head">
+          <span class="section-index">04</span>
+          <h2 class="section-title">支持率 × 倍率</h2>
+          <p class="section-caption" id="odds-caption">只讨论支持率与赔率的关系，不涉及队伍强弱或比赛内容。</p>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-kicker">赔率观测点</div>
+            <div class="chart tall" id="odds-chart" role="img" aria-label="支持率与赔率散点图"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-kicker">热门方胜率 · 按支持率分档</div>
+            <div class="chart tall" id="favorite-chart" role="img" aria-label="热门方胜率按支持率分档"></div>
+          </div>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">支持率分档明细</div>
+          <div class="table-wrap" id="bucket-table"></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="section-god" style="--delay:320ms">
+        <div class="section-head">
+          <span class="section-index">05</span>
+          <h2 class="section-title">上帝视角</h2>
+          <p class="section-caption" id="god-caption">在已知胜负的前提下，允许攒券、单场押任意金额时的最优分配。</p>
+        </div>
+        <div class="kpi-grid small" id="god-kpis"></div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">当前最优下注计划</div>
+          <div class="table-wrap" id="god-plan-table"></div>
+          <div class="prefix-strip" id="god-prefixes"></div>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">每日得分与累计</div>
+          <div class="chart tall" id="god-chart" role="img" aria-label="上帝视角每日得分与累计"></div>
+        </div>
+      </section>
+
+      <section class="section reveal" id="section-data" style="--delay:380ms">
+        <div class="section-head">
+          <span class="section-index">06</span>
+          <h2 class="section-title">数据与方法</h2>
+          <p class="section-caption" id="data-caption">—</p>
+        </div>
+        <div class="panel table-panel">
+          <div class="panel-kicker">完整比赛数据</div>
+          <div class="table-wrap" id="match-table"></div>
+        </div>
+        <div class="grid-2 align-start" style="margin-top:10px">
+          <div class="panel method">
+            <div class="panel-kicker">方法</div>
+            <div id="method-notes"></div>
+          </div>
+          <div class="panel method">
+            <div class="panel-kicker">口径与限制</div>
+            <div id="caveats"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>
+        数据源 <a id="data-link" href="#">—</a> · 修改 JSON 后刷新页面或点击「重新加载数据」，无需重建。
+      </div>
+      <div>
+        本地查看：在项目根目录运行 <code>python scripts/serve.py</code>，使用 ai 环境。
+      </div>
+    </footer>
+  </div>
+
+  <noscript>
+    <div class="notice">本页面需要启用 JavaScript 才能读取数据和绘制图表。</div>
+  </noscript>
+
+  <script src="vendor/echarts.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
