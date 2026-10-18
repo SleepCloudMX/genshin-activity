@@ -98,6 +98,12 @@ code { font-family: var(--font-mono); }
   min-height: 38px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .back-link {
   border: 0;
   background: none;
@@ -120,6 +126,7 @@ code { font-family: var(--font-mono); }
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
+  text-decoration: none;
   transition: color .16s ease, border-color .16s ease, background .16s ease;
 }
 
@@ -127,6 +134,7 @@ code { font-family: var(--font-mono); }
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
+  text-decoration: none;
 }
 
 .icon-btn svg { width: 18px; height: 18px; }
