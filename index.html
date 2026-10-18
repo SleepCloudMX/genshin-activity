@@ -55,7 +55,6 @@
           <div class="activity-meta">
             <span id="activity-meta-main"></span>
             <span id="activity-meta-updated"></span>
-            <button class="text-btn" id="reload-btn" type="button">刷新数据</button>
           </div>
         </header>
 
@@ -85,7 +84,7 @@
             <div class="table-wrap" id="god-plan-table"></div>
             <div class="prefix-strip" id="god-prefixes"></div>
           </div>
-          <div class="panel table-panel">
+          <div class="panel chart-panel table-panel">
             <div class="panel-title">每日得分</div>
             <div class="chart tall" id="god-chart" role="img" aria-label="上帝视角每日得分与累计"></div>
           </div>
@@ -97,11 +96,11 @@
             <p class="section-caption">以下策略按<strong>每场 50 券</strong>评估，固定选边。</p>
           </div>
           <div class="grid-2">
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">累计得分</div>
               <div class="chart tall" id="strategy-cum-chart" role="img" aria-label="各固定策略累计得分曲线"></div>
             </div>
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">得分构成</div>
               <div class="chart tall" id="strategy-final-chart" role="img" aria-label="各固定策略得分构成"></div>
             </div>
@@ -118,16 +117,16 @@
             <p class="section-caption">每场 <strong>50 券</strong>，结果固定，只让选边随机。</p>
           </div>
           <div class="grid-2">
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">最终得分分布</div>
               <div class="chart tall" id="hist-chart" role="img" aria-label="随机策略最终得分直方图"></div>
             </div>
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">累计概率</div>
               <div class="chart tall" id="cdf-chart" role="img" aria-label="随机策略累计分布函数"></div>
             </div>
           </div>
-          <div class="panel">
+          <div class="panel chart-panel">
             <div class="panel-title">逐日累计 · 阴影为 20%–80% 分位</div>
             <div class="chart tall" id="daily-band-chart" role="img" aria-label="随机策略逐日累计分位带"></div>
           </div>
@@ -143,11 +142,11 @@
             <p class="section-caption">支持率越低，赔率越高；不涉及队伍强弱。</p>
           </div>
           <div class="grid-2">
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">赔率观测</div>
               <div class="chart tall" id="odds-chart" role="img" aria-label="支持率与赔率散点图"></div>
             </div>
-            <div class="panel">
+            <div class="panel chart-panel">
               <div class="panel-title">热门方胜率</div>
               <div class="chart tall" id="favorite-chart" role="img" aria-label="热门方胜率按支持率分档"></div>
             </div>

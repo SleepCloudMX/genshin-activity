@@ -114,18 +114,11 @@
     });
   }
 
-  async function ensureActivityData(id, { reload = false } = {}) {
+  async function ensureActivityData(id) {
     const entry = indexEntry(id);
     if (!entry) throw new Error(`活动索引中不存在：${id}`);
-    if (!reload && dataRegistry()[id]) return dataRegistry()[id];
-    if (reload) {
-      delete dataRegistry()[id];
-      document.querySelectorAll('script[data-activity-data]').forEach((script) => {
-        if (script.dataset.activityData === id) script.remove();
-      });
-    }
-    const src = reload ? `${entry.dataFile}?v=${Date.now()}` : entry.dataFile;
-    await loadScript(src, id);
+    if (dataRegistry()[id]) return dataRegistry()[id];
+    await loadScript(entry.dataFile, id);
     const data = dataRegistry()[id];
     if (!data) throw new Error(`数据文件未注册活动 ${id}：${entry.dataFile}`);
     return data;
@@ -654,7 +647,7 @@
 
   function renderInsights(result) {
     $('#insights').innerHTML = result.insights.map((text) =>
-      `<div class="insight"><span class="insight-dash">—</span><span>${text}</span></div>`
+      `<div class="insight">${text}</div>`
     ).join('');
   }
 
@@ -780,10 +773,27 @@
   }
 
   function renderMatchTable(model) {
+    const pair = (left, right, leftClass = '', rightClass = '') =>
+      `<span class="pair"><span class="pair-left ${leftClass}">${left}</span><span class="pair-sep">:</span><span class="pair-right ${rightClass}">${right}</span></span>`;
     const rows = model.matches.map((m) => {
-      const support = `<span class="${m.favorite === 'left' ? 'winner-cell' : ''}">左 ${m.support.left}</span> <span class="faint">:</span> <span class="${m.favorite === 'right' ? 'winner-cell' : ''}">右 ${m.support.right}</span>`;
-      const odds = `<span class="${m.rawOdds.left === null ? 'faint' : ''}">${m.rawOdds.left === null ? '—' : m.rawOdds.left}</span> <span class="faint">:</span> <span class="${m.rawOdds.right === null ? 'faint' : ''}">${m.rawOdds.right === null ? '—' : m.rawOdds.right}</span>`;
-      const settlement = `<span class="${m.winner === 'left' ? 'winner-cell' : 'loser-cell'}">${m.settlement.left}</span> <span class="faint">:</span> <span class="${m.winner === 'right' ? 'winner-cell' : 'loser-cell'}">${m.settlement.right}</span>`;
+      const support = pair(
+        `左 ${m.support.left}`,
+        `右 ${m.support.right}`,
+        m.favorite === 'left' ? 'winner-cell' : '',
+        m.favorite === 'right' ? 'winner-cell' : ''
+      );
+      const odds = pair(
+        m.rawOdds.left === null ? '—' : m.rawOdds.left,
+        m.rawOdds.right === null ? '—' : m.rawOdds.right,
+        m.rawOdds.left === null ? 'faint' : '',
+        m.rawOdds.right === null ? 'faint' : ''
+      );
+      const settlement = pair(
+        m.settlement.left,
+        m.settlement.right,
+        m.winner === 'left' ? 'winner-cell' : 'loser-cell',
+        m.winner === 'right' ? 'winner-cell' : 'loser-cell'
+      );
       const type = m.underdogWin === null
         ? '—'
         : (m.underdogWin
@@ -802,7 +812,7 @@
       };
     });
     $('#match-table').innerHTML = table(
-      ['天', '场', '支持率（左:右）', '赛前赔率', '结算倍率（左:右）', '胜方', '类型'],
+      ['天', '场', '支持率（左:右）', '赛前赔率（左:右）', '结算倍率（左:右）', '胜方', '类型'],
       rows,
       [2, 3, 4]
     ) + `<p class="table-note">— 表示未记录。另有 ${model.missingLoserOdds} 个败方赛前赔率缺失。</p>`;
@@ -1564,27 +1574,6 @@
     }
   }
 
-  async function reloadCurrentActivity() {
-    if (!current) return;
-    const { activityId, entry } = current;
-    const token = ++loadToken;
-    showLoading();
-    disposeCharts();
-    document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.add('hidden'));
-    try {
-      const [raw] = await Promise.all([
-        ensureActivityData(activityId, { reload: true }),
-        ensureECharts()
-      ]);
-      if (token !== loadToken) return;
-      renderActivity(raw, activityId, entry);
-    } catch (err) {
-      if (token !== loadToken) return;
-      console.error(err);
-      showError('刷新失败', '暂时无法读取最新数据，请稍后再试。');
-    }
-  }
-
   function closeActivity({ push = true } = {}) {
     const url = new URL(location.href);
     if (push && url.searchParams.has('event')) {
@@ -1675,7 +1664,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme(currentTheme);
-    $('#reload-btn')?.addEventListener('click', reloadCurrentActivity);
     $('#back-btn')?.addEventListener('click', () => closeActivity());
     $('#theme-btn')?.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
     document.addEventListener('click', (event) => {
