@@ -48,7 +48,8 @@ window.ACTIVITY_DATA_BY_ID["<id>"] = {
 
 1. 创建 `data/<id>.js` 并注册数据；
 2. 在 `data/activities.js` 增加一条索引：`id / name / version / phase / startDate / status / dataFile / description`；
-3. 打开 `index.html?event=<id>`。
+3. 打开 `index.html?event=<id>`；
+4. 保持索引与数据文件中的 `activity` 元数据（名称/版本/阶段/日期）一致。
 
 修改数据后刷新页面；在活动页点击「重新加载数据」会带 cache-buster 重新加载当前数据文件。旧的 `data/7.1-261012.json` 已归档到 `temp/261018/legacy/`，不再使用。
 
