@@ -10,48 +10,48 @@
 
   const PALETTES = {
     dark: {
-      text: '#efe8da',
-      muted: '#999184',
-      faint: '#6f695f',
-      line: 'rgba(214,168,79,.20)',
-      lineSoft: 'rgba(239,232,218,.07)',
-      grid: 'rgba(239,232,218,.06)',
-      gold: '#d8aa54',
-      goldStrong: '#edc879',
-      red: '#d76b55',
-      jade: '#6ab5a3',
-      blue: '#86a4d9',
-      violet: '#b58bd0',
-      panel: '#141821',
-      panel2: '#181d28',
-      tooltipBg: '#0b0e14',
-      tooltipBorder: 'rgba(216,170,84,.35)',
-      baseBar: 'rgba(153,145,132,.34)',
-      coinBand: 'rgba(216,170,84,.15)',
-      supportBand: 'rgba(106,181,163,.15)',
-      series: ['#d8aa54', '#86a4d9', '#d76b55', '#6ab5a3', '#b58bd0', '#9aab72']
+      text: '#f2ebdf',
+      muted: '#a79e90',
+      faint: '#7b7265',
+      line: '#332d26',
+      lineSoft: '#2a251f',
+      grid: 'rgba(242,235,223,.07)',
+      gold: '#e07a66',
+      goldStrong: '#f09a88',
+      red: '#e07a66',
+      jade: '#7fb9a9',
+      blue: '#93aecb',
+      violet: '#a99bb5',
+      panel: '#1c1915',
+      panel2: '#231f1a',
+      tooltipBg: '#1c1915',
+      tooltipBorder: '#4a4136',
+      baseBar: 'rgba(167,158,144,.22)',
+      coinBand: 'rgba(224,122,102,.12)',
+      supportBand: 'rgba(127,185,169,.12)',
+      series: ['#e07a66', '#93aecb', '#d3a65a', '#7fb9a9', '#a99bb5', '#c7b07a']
     },
     light: {
-      text: '#241f18',
-      muted: '#746a5b',
-      faint: '#9c917f',
-      line: 'rgba(122,87,32,.24)',
-      lineSoft: 'rgba(36,31,24,.10)',
-      grid: 'rgba(36,31,24,.07)',
-      gold: '#92651b',
-      goldStrong: '#7a5215',
-      red: '#a33f2d',
-      jade: '#2d7768',
-      blue: '#3f6198',
-      violet: '#76518f',
-      panel: '#fbf7ee',
-      panel2: '#f5efe2',
-      tooltipBg: '#fffaf0',
-      tooltipBorder: 'rgba(146,101,27,.35)',
-      baseBar: 'rgba(116,106,91,.24)',
-      coinBand: 'rgba(146,101,27,.12)',
-      supportBand: 'rgba(45,119,104,.12)',
-      series: ['#92651b', '#3f6198', '#a33f2d', '#2d7768', '#76518f', '#6f7d3f']
+      text: '#23201c',
+      muted: '#746d63',
+      faint: '#a49b8e',
+      line: '#e3dccf',
+      lineSoft: '#ede7dc',
+      grid: 'rgba(35,32,28,.07)',
+      gold: '#b44536',
+      goldStrong: '#8f3227',
+      red: '#b44536',
+      jade: '#2f6f62',
+      blue: '#43617e',
+      violet: '#7b6a8a',
+      panel: '#fffdf9',
+      panel2: '#f8f4ec',
+      tooltipBg: '#fffdf9',
+      tooltipBorder: '#cfc5b5',
+      baseBar: 'rgba(116,109,99,.20)',
+      coinBand: 'rgba(180,69,54,.10)',
+      supportBand: 'rgba(47,111,98,.10)',
+      series: ['#b44536', '#43617e', '#a8792e', '#2f6f62', '#7b6a8a', '#8a8378']
     }
   };
 
@@ -81,7 +81,7 @@
     '全押右': '全右',
     '押支持率高的一方': '押热门',
     '押支持率低的一方': '押冷门',
-    '全押中（固定 50/场）': '全押中*'
+    '全押中（固定 50/场）': '全押中'
   }[name] || name);
 
   let currentTheme = document.documentElement.dataset.theme || 'light';
@@ -498,48 +498,16 @@
 
   function computeInsights(model, result) {
     const byId = Object.fromEntries(result.deterministic.map((s) => [s.id, s]));
-    const naive = result.deterministic.filter((s) => !s.reference);
-    const reached = naive.filter((s) => s.total >= model.full).length;
-    const best = [...naive].sort((a, b) => b.total - a.total)[0];
     const minority = byId.minority;
     const majority = byId.majority;
-    const remaining = model.expectedMatches - model.matches.length;
     const items = [];
 
     const minorityMults = [...new Set(minority.rows.filter((r) => r.win).map((r) => r.mult))]
       .sort((a, b) => a - b);
-    const minorityText = minorityMults.length
-      ? `胜场倍率 ${minorityMults.map((m) => `${m}×`).join(' / ')}`
-      : '没有胜场';
-    items.push(`固定 50 券：押冷门 <b>${fmt(minority.total)}</b> 分，押热门 <b>${fmt(majority.total)}</b> 分。冷门方 ${minority.wins}/${model.matches.length} 胜，${minorityText}。`);
-
-    items.push(`随机策略：抛硬币期望 <b>${fmt(result.coin.stats.mean)}</b>，P(≥${fmt(model.full)}) 为 <b>${pct(result.coin.stats.pFull)}</b>；按支持率加权期望 <b>${fmt(result.support.stats.mean)}</b>，P(≥${fmt(model.full)}) 为 <b>${pct(result.support.stats.pFull)}</b>。`);
-
-    items.push(`满奖励线 <b>${fmt(model.full)}</b>：${naive.length} 个朴素固定策略中有 <b>${reached}</b> 个在样本内达到；上帝视角上限为 <b>${fmt(result.god.total)}</b>。`);
-
-    const oddsValues = [...new Set(result.buckets.oddsPoints.map((p) => p.odds))].sort((a, b) => a - b);
-    const emptyBuckets = result.buckets.buckets
-      .filter((b) => b.points.length === 0)
-      .map((b) => `${b.min}–${b.max}%`);
-    const sortedPoints = [...result.buckets.oddsPoints]
-      .sort((a, b) => a.support - b.support || a.odds - b.odds);
-    let jump = null;
-    for (let i = 1; i < sortedPoints.length; i += 1) {
-      if (sortedPoints[i].odds !== sortedPoints[i - 1].odds) {
-        const gap = sortedPoints[i].support - sortedPoints[i - 1].support;
-        if (!jump || gap < jump.gap) {
-          jump = { gap, a: sortedPoints[i - 1], b: sortedPoints[i] };
-        }
-      }
-    }
-    items.push(`赔率档位 ${oddsValues.map((v) => `${v}×`).join(' / ') || '—'}${jump ? `；最密集跳变 ${jump.a.support}%→${jump.a.odds}×、${jump.b.support}%→${jump.b.odds}×` : ''}；空档 ${emptyBuckets.join('、') || '无'}。`);
-
-    if (remaining > 0) {
-      items.push(`已记录 ${model.matches.length}/${model.expectedMatches} 场；剩余 ${remaining} 场可能改变排序，以上均为样本内观察。`);
-    } else {
-      items.push(`已记录全部 ${model.matches.length} 场；以上仍为样本内观察，不构成对未来比赛的预测。`);
-    }
-    if (best) items[0] += ` 样本内最佳朴素策略是「${best.name}」，${fmt(best.total)} 分。`;
+    items.push(`押冷门目前 <b>${fmt(minority.total)}</b> 分：${minority.wins}/${model.matches.length} 次命中，胜场倍率 ${minorityMults.map((m) => `${m}×`).join(' / ') || '—'}。样本只有 ${model.matches.length} 场，不能当作稳定优势。`);
+    items.push(`热门方 ${majority.wins}/${model.matches.length} 胜，但胜场平均只有 ${fmt1(majority.avgWinMult)} 倍，总分 ${fmt(majority.total)}。胜率高不等于得分高。`);
+    items.push(`抛硬币选边有 <b>${pct(result.coin.stats.pFull)}</b> 的概率达到 ${fmt(model.full)} 分；按支持率加权只有 <b>${pct(result.support.stats.pFull)}</b>。`);
+    items.push(`提前知道结果并集中下注，最高 <b>${fmt(result.god.total)}</b> 分；已用 ${fmt(result.god.used)} 券。`);
     return items;
   }
 
@@ -586,13 +554,10 @@
     return `<table>${options.caption ? `<caption>${esc(options.caption)}</caption>` : ''}<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
   }
 
-  function kpi(label, value, sub, accent = '', tag = '', smallValue = false) {
+  function kpi(label, value, sub, accent = '') {
     return `<article class="kpi ${accent}">
-      <div class="kpi-top">
-        <span class="kpi-label">${esc(label)}</span>
-        ${tag ? `<span class="badge">${esc(tag)}</span>` : ''}
-      </div>
-      <div class="kpi-value ${smallValue ? 'small' : ''}">${value}</div>
+      <div class="kpi-label">${esc(label)}</div>
+      <div class="kpi-value">${value}</div>
       <div class="kpi-sub">${sub}</div>
     </article>`;
   }
@@ -637,62 +602,37 @@
 
   // ---------- header and KPIs ----------
 
-  function renderHeader(model, result, source) {
-    document.title = `${model.name} · 支持率与倍率分析`;
+  function renderHeader(model, result) {
+    document.title = `${model.name} · 活动观测`;
     setText('#hero-eyebrow', [model.game, model.version, model.phase].filter(Boolean).join(' · ') || '活动分析');
     setText('#hero-title', model.name);
-    setText('#status-badge', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
-    setText('#last-updated', `更新 ${model.lastUpdated}`);
-    setText('#meta-activity', [model.game, model.version, model.phase, model.startDate].filter(Boolean).join(' · ') || '—');
-    setText('#meta-source', source.path);
-    setText('#meta-multiplier', `败方 ${model.losing}× · 上限 ${model.maxMultiplier}×`);
-    setText('#meta-score', `押 n 券 → n × 结算倍率积分`);
-
-    const badgeWrap = $('#status-badge-wrap');
-    if (badgeWrap) {
-      badgeWrap.className = model.warnings.length ? 'badge warn' : 'badge gold';
-    }
-    setText('#overview-caption', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场 · 每场 ${model.stake} 券`);
-    setText('#data-caption', `${source.name} · 记录 ${model.dataSource || '—'} · 赔率点 ${result.buckets.oddsPoints.length} 个`);
+    setText('#activity-meta-main', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
+    setText('#activity-meta-updated', `更新于 ${model.lastUpdated}`);
+    setText('#overview-caption', `每场 ${model.stake} 券 · 当前 ${model.matches.length} 场`);
+    setText('#data-caption', `已记录 ${model.matches.length} 场 · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
     const naive = result.deterministic.filter((s) => !s.reference);
     const best = [...naive].sort((a, b) => b.total - a.total)[0];
     const fullReached = naive.filter((s) => s.total >= model.full).length;
-    const completionFloor = model.stake * model.losing * model.expectedMatches;
-    const oracle = result.deterministic.find((s) => s.id === 'oracle-fixed');
+    const lastDay = model.days[model.days.length - 1] || 0;
     const kpis = [
-      kpi('已记录', `${model.days.length}<span class="muted" style="font-size:.55em"> / ${model.totalDays} 天</span>`,
-        `${model.matches.length} / ${model.expectedMatches} 场 · 每场 ${model.stake} 券`, 'blue', 'LIVE', true),
+      kpi('已记录', `${model.days.length}<span class="unit">/ ${model.totalDays} 天</span>`,
+        `${model.matches.length} / ${model.expectedMatches} 场 · 每场 ${model.stake} 券`),
       kpi('满奖励线', fmt(model.full),
-        `${naive.length} 个朴素固定策略中 ${fullReached} 个在样本内达到`, 'red', 'THRESHOLD'),
-      kpi('固定 50 券保底', fmt(result.base),
-        `当前 ${model.matches.length} 场全押错；完赛 ${fmt(completionFloor)}`, '', 'FLOOR'),
-      kpi('样本内最佳固定策略', `${esc(shortName(best?.name || '—'))}<span class="muted" style="font-size:.55em"> ${fmt(best?.total)}</span>`,
-        best ? `${best.name} · 胜率 ${best.wins}/${model.matches.length} · 胜场均倍率 ${fmt1(best.avgWinMult)}` : '—', 'gold', 'IN-SAMPLE', true),
-      kpi('上帝视角最高分', fmt(result.god.total),
-        `已用 ${fmt(result.god.used)} 券 · 截至第 ${model.days[model.days.length - 1] || 0} 天`, 'jade', 'HINDSIGHT'),
-      kpi('随机策略期望', `<span style="font-size:.72em">${fmt(result.support.stats.mean)} – ${fmt(result.coin.stats.mean)}</span>`,
-        `加权 / 抛硬币 · P(≥${fmt(model.full)}) ${pct(result.support.stats.pFull)} / ${pct(result.coin.stats.pFull)}`, 'blue', 'EXPECTED', true)
+        `${naive.length} 个固定策略中 ${fullReached} 个已达`, 'accent'),
+      kpi('当前领先', fmt(best?.total || 0),
+        best ? `${shortName(best.name)} · ${best.wins}/${model.matches.length} 胜 · 胜场均 ${fmt1(best.avgWinMult)} 倍` : '—'),
+      kpi('上帝视角上限', fmt(result.god.total),
+        `已用 ${fmt(result.god.used)} 券 · 截至第 ${lastDay} 天`)
     ];
     $('#kpis').innerHTML = kpis.join('');
-
-    const godKpis = [
-      kpi('上帝视角最高分', fmt(result.god.total), `截至第 ${model.days[model.days.length - 1] || 0} 天`, 'gold', 'MAX'),
-      kpi('固定 50 全押中', fmt(oracle?.total || 0), '每场 50 券的参考上限，不是动态最优', '', 'REFERENCE'),
-      kpi('满奖励线', fmt(model.full), `高出 ${fmt(Math.max(0, result.god.total - model.full))} 分`, 'red', 'TARGET'),
-      kpi('券使用', `${fmt(result.god.used)} <span class="muted" style="font-size:.6em">/ ${fmt(result.god.granted)}</span>`, '已发放券（截至当前场次）', 'jade', 'BANKROLL', true)
-    ];
-    $('#god-kpis').innerHTML = godKpis.join('');
   }
 
   function renderInsights(result) {
-    $('#insights').innerHTML = result.insights.map((text, i) =>
-      `<div class="insight">
-        <span class="insight-num">${String(i + 1).padStart(2, '0')}</span>
-        <div>${text}</div>
-      </div>`
+    $('#insights').innerHTML = result.insights.map((text) =>
+      `<div class="insight"><span class="insight-dash">—</span><span>${text}</span></div>`
     ).join('');
   }
 
@@ -701,8 +641,8 @@
   function renderStrategyTable(model, result) {
     const rows = result.deterministic.map((s) => {
       const reach = s.total >= model.full
-        ? '<span class="badge gold">达到</span>'
-        : `<span class="badge">差 ${fmt(model.full - s.total)}</span>`;
+        ? '<span class="status-ok">达到</span>'
+        : `<span class="status-miss">差 ${fmt(model.full - s.total)}</span>`;
       return {
         __class: s.reference ? 'ref-row' : '',
         cells: [
@@ -718,10 +658,10 @@
       };
     });
     $('#strategy-table').innerHTML = table(
-      ['策略', '总得分', '相对保底加成', '胜场', '胜场均倍率', '满奖励', '抛硬币分位', '加权分位'],
+      ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '抛硬币分位', '加权分位'],
       rows,
       [1, 2, 3, 4, 6, 7]
-    ) + `<p class="muted" style="margin:10px 2px 0;font-size:11.5px">分位 = 该随机策略得分不超过此确定性策略的概率。确定性策略是事后选出的，不能当作预测。</p>`;
+    ) + `<p class="table-note">分位 = 该随机策略得分不超过此得分的概率。固定策略是事后选出的，不能当作预测。</p>`;
   }
 
   function renderRandomTable(model, result) {
@@ -747,7 +687,7 @@
       ['策略', '期望', '中位数', 'P20', 'P80', 'P5', 'P95', '最低', '最高', `P(≥${fmt(model.full)})`, `P(≥${fmt(model.original)})`],
       rows,
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ) + `<p class="muted" style="margin:10px 2px 0;font-size:11.5px">按支持率加权 = 每场独立以双方支持率为概率选边。该假设不代表真实人群的联合分布，只能作为随机策略的定义。</p>`;
+    ) + `<p class="table-note">按支持率加权：每场按双方支持率随机选边。</p>`;
   }
 
   function renderBucketTable(model, result) {
@@ -773,7 +713,7 @@
       ['支持率区间', '观测点（支持率→赔率）', '倍率', '赔率点', '热门方胜率'],
       rows,
       [2, 3, 4]
-    ) + `<p class="muted" style="margin:10px 2px 0;font-size:11.5px">包含 ${result.buckets.oddsPoints.length} 个赔率点：${result.buckets.oddsPoints.filter((p) => p.role === 'winner').length} 个胜方点 + ${result.buckets.oddsPoints.filter((p) => p.role === 'loser').length} 个已知败方赛前赔率点。败方赔率被结算值 10 覆盖，因此缺失较多。</p>`;
+    ) + `<p class="table-note">共 ${result.buckets.oddsPoints.length} 个赔率点，其中 ${result.buckets.oddsPoints.filter((p) => p.role === 'loser').length} 个是已知的败方赛前赔率。败方赔率大多未记录。</p>`;
   }
 
   function renderGodPlan(model, result) {
@@ -781,13 +721,16 @@
       const m = row.match;
       const matchLabel = m ? `${m.match}` : '—';
       const side = m ? SIDE_LABEL[m.winner] : '—';
+      const teamName = m?.teams?.[m.winner];
       const support = m ? `${m.support[m.winner]}%` : '—';
       const mult = m ? `${m.winnerMult}×` : '—';
       return {
         cells: [
           `第 ${row.day} 天`,
-          `${matchLabel}${m && m.teams ? `<span class="sub-line">${esc(m.teams.left)} vs ${esc(m.teams.right)}</span>` : ''}`,
-          row.stake > 0 ? `<span class="winner-cell">${side}</span>` : '<span class="faint">不押</span>',
+          matchLabel,
+          row.stake > 0
+            ? `<span class="winner-cell">${side}${teamName ? ` · ${esc(teamName)}` : ''}</span>`
+            : '<span class="faint">不押</span>',
           support,
           mult,
           row.stake > 0 ? fmt(row.stake) : '<span class="faint">0</span>',
@@ -814,9 +757,9 @@
       rows,
       [3, 4, 5, 6, 7]
     );
-    $('#god-prefixes').innerHTML = `<span>逐日重算上限：</span>` +
+    $('#god-prefixes').innerHTML = `<span>如果只考虑到当天：</span>` +
       result.godPrefixes.map((g) => `<span class="pill"><b>D${g.horizon}</b> ${fmt(g.total)}</span>`).join('<span class="arrow">→</span>') +
-      `<span class="muted" style="margin-left:6px">若只考虑到当天，最优计划可能不同</span>`;
+      `<span class="muted" style="margin-left:6px">最优计划可能不同</span>`;
   }
 
   function renderMatchTable(model) {
@@ -827,8 +770,8 @@
       const type = m.underdogWin === null
         ? '—'
         : (m.underdogWin
-          ? '<span class="badge gold">冷门胜</span>'
-          : '<span class="badge jade">热门胜</span>');
+          ? '<span class="win-cold">冷门胜</span>'
+          : '<span class="win-hot">热门胜</span>');
       return {
         cells: [
           `第 ${m.day} 天`,
@@ -843,34 +786,31 @@
       };
     });
     $('#match-table').innerHTML = table(
-      ['天', '场', '支持率（左:右）', '赛前赔率（记录）', '结算倍率（左:右）', '胜方', '胜方倍率', '类型'],
+      ['天', '场', '支持率（左:右）', '赛前赔率', '结算倍率（左:右）', '胜方', '胜方倍率', '类型'],
       rows,
       [2, 3, 4, 6]
-    ) + `<p class="muted" style="margin:10px 2px 0;font-size:11.5px">赛前赔率列保留 JSON 原始记录；散点图中的胜方赔率会在缺失时用结算倍率补全。另有 ${model.missingLoserOdds} 个败方赛前赔率未记录。</p>`;
+    ) + `<p class="table-note">— 表示未记录。另有 ${model.missingLoserOdds} 个败方赛前赔率缺失。</p>`;
   }
 
   function renderMethodNotes(model, result) {
-    const count = result.buckets.oddsPoints.length;
     const states = result.coin.stats.states;
-    const threshold = model.full;
     const emptyBuckets = result.buckets.buckets
       .filter((b) => b.points.length === 0)
       .map((b) => `${b.min}–${b.max}%`);
     const minorityWins = result.deterministic.find((s) => s.id === 'minority')?.wins ?? 0;
     $('#method-notes').innerHTML = `<ul>
-      <li><strong>得分</strong>：押 n 券，结算时获得 n × 结算倍率积分；押错固定 10×。已按你的说明确认。</li>
-      <li><strong>固定策略</strong>：每场 ${model.stake} 券，当前 ${model.matches.length} 场共 ${fmt(model.stake * model.matches.length)} 券；完赛 ${model.expectedMatches} 场共 ${fmt(model.stake * model.expectedMatches)} 券。</li>
-      <li><strong>随机策略</strong>：逐场把两种结算倍率的分布做精确卷积，共 ${states} 个不同得分；没有使用蒙特卡洛。</li>
-      <li><strong>上帝视角</strong>：动态规划；每日开始时发 ${model.dailyGrant} 券、持有上限 ${model.holdingCap}、可攒券、单场不限金额；每天只押当天胜方倍率更高的一场。</li>
-      <li><strong>奖励线</strong>：${fmt(model.original)} = ${model.expectedMatches} 场全押错的保底，可拿满原始奖励；8,000 分后的奖励非原石；${fmt(threshold)} = 满奖励线。</li>
-      <li><strong>赔率点</strong>：当前 ${count} 个（${result.buckets.oddsPoints.filter((p) => p.role === 'winner').length} 胜方 + ${result.buckets.oddsPoints.filter((p) => p.role === 'loser').length} 已知败方）。</li>
+      <li><strong>得分</strong>：押 n 券，按结算倍率获得积分；押错固定 10 倍。</li>
+      <li><strong>固定策略</strong>：每场 ${model.stake} 券，比较全押左、全押右、押热门、押冷门。</li>
+      <li><strong>随机策略</strong>：每场按概率选边，穷举所有可能结果，共 ${states} 种得分。</li>
+      <li><strong>上帝视角</strong>：假设提前知道胜负；每天开始时发 ${model.dailyGrant} 券，最多持有 ${model.holdingCap} 券，可以攒券集中下注。</li>
+      <li><strong>奖励线</strong>：${fmt(model.original)} 分拿满原始奖励；${fmt(model.full)} 分拿满全部奖励。</li>
     </ul>`;
     $('#caveats').innerHTML = `<ul>
-      <li>随机策略的随机性<strong>只来自选边</strong>，比赛结果按已记录事实固定；这是条件于历史的回测，不是预测。</li>
-      <li>押热门/冷门使用<strong>收盘支持率</strong>；现实中只能在临近收盘时按实时支持率决策，存在轻微前视偏差。</li>
-      <li>当前只有 ${model.matches.length} 场，冷门策略的领先主要来自 ${minorityWins} 次获胜，样本量不足以证明稳定优势。</li>
-      <li>支持率—倍率关系仍有空档${emptyBuckets.length ? `（${emptyBuckets.join('、')}）` : ''}；败方赛前赔率缺失最多，记录双方赔率能显著提高这一节的信息量。</li>
-      <li>上帝视角基于已记录场次；明后天出现更高倍率时，最优计划会改变。页面重新读取 JSON 后自动重算，无需重建。</li>
+      <li>随机策略只让选边随机，比赛结果按已记录事实固定，不是预测。</li>
+      <li>押热门/冷门使用收盘支持率；现实中只能在临近收盘时决定。</li>
+      <li>目前只有 ${model.matches.length} 场，冷门策略的领先主要来自 ${minorityWins} 次获胜，样本量不足。</li>
+      <li>支持率—倍率关系仍有空档${emptyBuckets.length ? `（${emptyBuckets.join('、')}）` : ''}；败方赛前赔率大多未记录。</li>
+      <li>上帝视角基于已记录场次，后续比赛可能改变最优计划。</li>
     </ul>`;
   }
 
@@ -1001,9 +941,7 @@
       xAxis: axisStyle(p, { data: ['开始', ...model.days.map((d) => `D${d}`)], boundaryGap: false }),
       yAxis: axisStyle(p, {
         value: true,
-        labels: { formatter: (v) => compact(v) },
-        name: '累计得分',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => compact(v) }
       }),
       series
     });
@@ -1032,9 +970,7 @@
       }),
       yAxis: axisStyle(p, {
         value: true,
-        labels: { formatter: (v) => compact(v) },
-        name: '得分',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => compact(v) }
       }),
       series: [
         {
@@ -1044,8 +980,7 @@
           barWidth: '46%',
           data: bases,
           itemStyle: { color: p.baseBar },
-          emphasis: { focus: 'series' },
-          markLine: thresholdMarkLines(p, model.full, model.original)
+          emphasis: { focus: 'series' }
         },
         {
           name: '加成',
@@ -1108,7 +1043,7 @@
   function renderHistChart(model, result) {
     const p = palette();
     const hist = buildHistogram(model, result);
-    const labels = hist.bins.map((b) => `${compact(b.start)}–${compact(b.end)}`);
+    const labels = hist.bins.map((b) => compact(b.start));
     const fullX = hist.thresholdIndex(model.full);
     const originalX = hist.thresholdIndex(model.original);
     makeChart('hist-chart', {
@@ -1123,16 +1058,14 @@
           .map((item) => `${item.marker}${esc(item.seriesName)} <b style="float:right;margin-left:18px">${pct(item.value)}</b>`)
           .join('<br>');
       }),
-      grid: { left: 62, right: 22, top: 48, bottom: 58, containLabel: true },
+      grid: { left: 62, right: 22, top: 48, bottom: 48, containLabel: true },
       xAxis: axisStyle(p, {
         data: labels,
-        labels: { rotate: 34, interval: Math.max(0, Math.ceil(labels.length / 12) - 1) }
+        labels: { interval: Math.max(0, Math.ceil(labels.length / 10) - 1) }
       }),
       yAxis: axisStyle(p, {
         value: true,
-        labels: { formatter: (v) => `${Math.round(v * 100)}%` },
-        name: '概率',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => `${Math.round(v * 100)}%` }
       }),
       series: [
         {
@@ -1149,12 +1082,12 @@
               {
                 xAxis: fullX,
                 lineStyle: { color: p.red, type: 'dashed', width: 1 },
-                label: { formatter: `满奖励 ${fmt(model.full)}`, color: p.red, fontFamily: FONT_MONO, fontSize: 10, position: 'insideEndTop' }
+                label: { formatter: `满奖励 ${fmt(model.full)}`, color: p.red, fontFamily: FONT_MONO, fontSize: 9, rotate: 0, position: 'insideEndTop' }
               },
               {
                 xAxis: originalX,
                 lineStyle: { color: p.muted, type: 'dotted', width: 1 },
-                label: { formatter: `原始 ${fmt(model.original)}`, color: p.muted, fontFamily: FONT_MONO, fontSize: 10, position: 'insideEndBottom' }
+                label: { formatter: `原始 ${fmt(model.original)}`, color: p.muted, fontFamily: FONT_MONO, fontSize: 9, rotate: 0, position: 'insideEndBottom' }
               }
             ]
           }
@@ -1194,24 +1127,18 @@
           .map((item) => `${item.marker}${esc(item.seriesName)} <b style="float:right;margin-left:18px">${pct(item.value?.[1])}</b>`)
           .join('<br>');
       }),
-      grid: { left: 62, right: 24, top: 48, bottom: 64, containLabel: true },
+      grid: { left: 62, right: 24, top: 48, bottom: 48, containLabel: true },
       xAxis: axisStyle(p, {
         value: true,
         min: minX,
         max: maxX,
-        labels: { formatter: (v) => compact(v) },
-        name: '得分',
-        nameLocation: 'middle',
-        nameGap: 30,
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => compact(v) }
       }),
       yAxis: axisStyle(p, {
         value: true,
         min: 0,
         max: 1,
-        labels: { formatter: (v) => `${Math.round(v * 100)}%` },
-        name: '累计概率',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => `${Math.round(v * 100)}%` }
       }),
       series: [
         {
@@ -1230,12 +1157,12 @@
               {
                 xAxis: model.full,
                 lineStyle: { color: p.red, type: 'dashed', width: 1 },
-                label: { formatter: `满奖励 ${fmt(model.full)}`, color: p.red, fontFamily: FONT_MONO, fontSize: 10, position: 'insideEndTop' }
+                label: { formatter: `满奖励 ${fmt(model.full)}`, color: p.red, fontFamily: FONT_MONO, fontSize: 9, rotate: 0, position: 'insideEndTop' }
               },
               {
                 xAxis: model.original,
                 lineStyle: { color: p.muted, type: 'dotted', width: 1 },
-                label: { formatter: `原始 ${fmt(model.original)}`, color: p.muted, fontFamily: FONT_MONO, fontSize: 10, position: 'insideEndBottom' }
+                label: { formatter: `原始 ${fmt(model.original)}`, color: p.muted, fontFamily: FONT_MONO, fontSize: 9, rotate: 0, position: 'insideEndBottom' }
               }
             ]
           }
@@ -1312,9 +1239,7 @@
       xAxis: axisStyle(p, { data: days.map((d) => `D${d}`), boundaryGap: false }),
       yAxis: axisStyle(p, {
         value: true,
-        labels: { formatter: (v) => compact(v) },
-        name: '累计得分',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => compact(v) }
       }),
       series: [
         ...bandSeries('抛硬币', coin, p.gold, p.coinBand, 'coinBand'),
@@ -1347,23 +1272,17 @@
       animationDuration: 650,
       legend: legendStyle(p, ['胜方赔率点', '已知败方赔率点']),
       tooltip: tooltipStyle(p, pointTooltip, 'item'),
-      grid: { left: 58, right: 24, top: 48, bottom: 60, containLabel: true },
+      grid: { left: 58, right: 24, top: 48, bottom: 44, containLabel: true },
       xAxis: axisStyle(p, {
         value: true,
         min: 0,
         max: 100,
-        labels: { formatter: (v) => `${v}%` },
-        name: '支持率',
-        nameLocation: 'middle',
-        nameGap: 30,
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => `${v}%` }
       }),
       yAxis: axisStyle(p, {
         value: true,
         min: 0,
-        max: 110,
-        name: '赛前赔率',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        max: 110
       }),
       series: [
         {
@@ -1396,7 +1315,7 @@
           data: losers,
           symbolSize: 12,
           symbol: 'diamond',
-          itemStyle: { color: p.red, opacity: 0.95, borderColor: p.panel, borderWidth: 1 },
+          itemStyle: { color: p.blue, opacity: 0.95, borderColor: p.panel, borderWidth: 1 },
           emphasis: { scale: 1.5 }
         }
       ]
@@ -1425,9 +1344,7 @@
         value: true,
         min: 0,
         max: 1,
-        labels: { formatter: (v) => `${Math.round(v * 100)}%` },
-        name: '热门方胜率',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => `${Math.round(v * 100)}%` }
       }),
       series: [
         {
@@ -1482,9 +1399,7 @@
       xAxis: axisStyle(p, { data: model.days.map((d) => `D${d}`) }),
       yAxis: axisStyle(p, {
         value: true,
-        labels: { formatter: (v) => compact(v) },
-        name: '得分',
-        nameTextStyle: { color: p.muted, fontFamily: FONT_BODY, fontSize: 10 }
+        labels: { formatter: (v) => compact(v) }
       }),
       series: [
         {
@@ -1541,8 +1456,8 @@
 
   // ---------- render all ----------
 
-  function renderAll(model, result, source) {
-    renderHeader(model, result, source);
+  function renderAll(model, result) {
+    renderHeader(model, result);
     renderKpis(model, result);
     renderInsights(result);
     renderStrategyTable(model, result);
@@ -1560,44 +1475,38 @@
   function showIndexView() {
     $('#index-view')?.classList.remove('hidden');
     $('#dashboard-view')?.classList.add('hidden');
-    $('#nav-list-btn')?.classList.add('hidden');
+    $('#back-btn')?.classList.add('hidden');
     disposeCharts();
     current = null;
     window.__analysis = null;
-    document.title = '原神活动数据分析';
+    document.title = '活动观测';
   }
 
   function showDashboardView() {
     $('#index-view')?.classList.add('hidden');
     $('#dashboard-view')?.classList.remove('hidden');
-    $('#nav-list-btn')?.classList.remove('hidden');
+    $('#back-btn')?.classList.remove('hidden');
   }
 
   function renderIndex() {
     showIndexView();
     const entries = activityIndex();
-    const cards = entries.map((entry) => {
-      const statusClass = entry.status === '已结束' ? '' : 'jade';
-      const meta = [
-        entry.game,
-        entry.startDate ? `开始 ${entry.startDate}` : '',
-        entry.dataFile
-      ].filter(Boolean).map(esc).map((text) => `<span>${text}</span>`).join('');
-      return `<a class="activity-card" href="?event=${encodeURIComponent(entry.id)}" data-activity-id="${esc(entry.id)}">
-        <div class="activity-card-top">
-          <span class="badge gold">${esc([entry.version, entry.phase].filter(Boolean).join(' '))}</span>
-          <span class="badge ${statusClass}">${esc(entry.status || '进行中')}</span>
+    const rows = entries.map((entry) => {
+      const kicker = [entry.version, entry.phase, entry.status].filter(Boolean).join(' · ');
+      return `<a class="activity-row" href="?event=${encodeURIComponent(entry.id)}" data-activity-id="${esc(entry.id)}">
+        <div class="activity-row-main">
+          <div class="activity-row-kicker">${esc(kicker)}</div>
+          <h3>${esc(entry.name)}</h3>
+          <p>${esc(entry.description || '')}</p>
         </div>
-        <h2>${esc(entry.name)}</h2>
-        <p>${esc(entry.description || '')}</p>
-        <div class="activity-card-meta">${meta}</div>
-        <span class="activity-card-cta">打开分析 →</span>
+        <div class="activity-row-side">
+          <span class="activity-row-date">${entry.startDate ? `${esc(entry.startDate)} 起` : ''}</span>
+          <span class="activity-row-cta">查看分析</span>
+        </div>
       </a>`;
     }).join('');
-    $('#activity-cards').innerHTML = cards || '<div class="notice warn">活动索引为空。请检查 <code>data/activities.js</code>。</div>';
-    setText('#index-caption', entries.length
-      ? `${entries.length} 个活动 · 数据按文件拆分 · 无服务器`
-      : '0 个活动 · 请检查 data/activities.js');
+    $('#activity-cards').innerHTML = rows || '<p class="muted">暂无可查看的活动。</p>';
+    setText('#index-caption', entries.length ? `${entries.length} 个活动` : '');
   }
 
   async function openActivity(id, { push = true } = {}) {
@@ -1609,9 +1518,11 @@
       history.pushState({ event: id }, '', url);
     }
     showDashboardView();
+    document.title = `${entry.name || '活动'} · 活动观测`;
     setText('#hero-title', entry.name || '活动分析');
     setText('#hero-eyebrow', [entry.game, entry.version, entry.phase].filter(Boolean).join(' · ') || '活动分析');
-    setText('#status-badge', '正在读取');
+    setText('#activity-meta-main', '正在载入…');
+    setText('#activity-meta-updated', '');
     showLoading();
     disposeCharts();
     document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.add('hidden'));
@@ -1624,7 +1535,9 @@
       renderActivity(raw, id, entry);
     } catch (err) {
       if (token !== loadToken) return;
-      showError('载入活动失败', err?.message || String(err), `请检查 ${entry.dataFile} 是否存在，并注册了活动 ${id}。`);
+      console.error(err);
+      setText('#activity-meta-main', '暂时无法载入');
+      showError('载入活动失败', '暂时无法读取这个活动的数据，请稍后再试。');
     }
   }
 
@@ -1644,7 +1557,8 @@
       renderActivity(raw, activityId, entry);
     } catch (err) {
       if (token !== loadToken) return;
-      showError('重新加载失败', err?.message || String(err), `请检查 ${entry.dataFile}。`);
+      console.error(err);
+      showError('刷新失败', '暂时无法读取最新数据，请稍后再试。');
     }
   }
 
@@ -1661,14 +1575,16 @@
     const source = sourceFromEntry(entry);
     const model = normalize(raw);
     if (model.errors.length) {
-      showError('数据校验失败', model.errors.join('；'), `请检查 ${source.path} 的结构。`);
+      console.error(model.errors);
+      setText('#activity-meta-main', '数据不完整');
+      showError('数据暂时无法显示', '这份活动的记录还不完整，请稍后再试。');
       return;
     }
     document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.remove('hidden'));
     showWarnings(model.warnings);
     const result = computeAnalysis(model);
     current = { model, result, source, activityId: id, entry };
-    renderAll(model, result, source);
+    renderAll(model, result);
     window.__analysis = {
       activityId: id,
       url: source.path,
@@ -1718,7 +1634,11 @@
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* noop */ }
     const button = $('#theme-btn');
-    if (button) button.textContent = theme === 'dark' ? '切换亮色' : '切换暗色';
+    if (button) {
+      const label = theme === 'dark' ? '切换到浅色模式' : '切换到暗色模式';
+      button.setAttribute('aria-label', label);
+      button.setAttribute('title', label);
+    }
     if (current) renderCharts(current.model, current.result);
   }
 
@@ -1734,11 +1654,6 @@
     applyTheme(currentTheme);
     $('#reload-btn')?.addEventListener('click', reloadCurrentActivity);
     $('#back-btn')?.addEventListener('click', () => closeActivity());
-    $('#nav-list-btn')?.addEventListener('click', () => closeActivity());
-    $('#site-home')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      closeActivity();
-    });
     $('#theme-btn')?.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
     document.addEventListener('click', (event) => {
       const card = event.target.closest('[data-activity-id]');

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="原神活动数据分析：支持率、倍率与下注策略回测">
+  <meta name="description" content="原神限时活动的支持率、倍率与下注策略观察">
   <link rel="icon" href="data:,">
-  <title>原神活动数据分析</title>
+  <title>活动观测</title>
   <script>
     try {
       document.documentElement.dataset.theme =
@@ -18,198 +18,168 @@
 </head>
 <body>
   <div class="page">
-    <nav class="site-nav">
-      <a class="site-brand" href="./" id="site-home">原神活动数据分析</a>
-      <div class="site-nav-actions">
-        <button class="btn hidden" id="nav-list-btn" type="button">活动列表</button>
-        <button class="btn" id="theme-btn" type="button">切换暗色</button>
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="back-link hidden" id="back-btn" type="button">← 所有活动</button>
       </div>
-    </nav>
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="切换到暗色模式" title="切换到暗色模式">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+    </header>
 
     <main id="main">
       <section id="index-view">
-        <header class="index-hero reveal">
-          <div class="eyebrow">原神 · 活动数据分析</div>
-          <h1 class="hero-title">活动档案</h1>
-          <p class="hero-sub">支持率 × 倍率 · 固定 50 券策略回测 · 随机分布 · 上帝视角</p>
+        <header class="index-hero">
+          <div class="eyebrow">原神 · 限时活动</div>
+          <h1 class="index-title">活动观测</h1>
+          <p class="index-sub">记录支持率、倍率与每一次下注的得失。</p>
         </header>
-        <div class="section-head">
-          <span class="section-index">INDEX</span>
-          <h2 class="section-title">活动列表</h2>
-          <p class="section-caption" id="index-caption">加载中…</p>
+
+        <div class="index-list-head">
+          <h2>活动</h2>
+          <span id="index-caption"></span>
         </div>
-        <div class="activity-grid" id="activity-cards"></div>
-        <div class="panel index-note">
-          <div class="panel-kicker">说明</div>
-          <p>本站是单页壳子，通过 <code>?event=&lt;id&gt;</code> 进入具体活动。活动数据按文件拆分，新增活动只需登记索引并添加数据文件。</p>
-        </div>
+        <div id="activity-cards" class="activity-list"></div>
       </section>
 
       <section id="dashboard-view" class="hidden">
-        <header class="hero reveal" style="--delay:0ms">
-          <div class="hero-main">
-            <div class="eyebrow" id="hero-eyebrow">原神 · 7.1 上半</div>
-            <h1 class="hero-title" id="hero-title">判测胜券本征</h1>
-            <p class="hero-sub">支持率 × 倍率 · 固定 50 券策略回测 · 随机分布 · 上帝视角</p>
+        <header class="activity-head">
+          <div class="eyebrow" id="hero-eyebrow"></div>
+          <h1 class="activity-title" id="hero-title"></h1>
+          <div class="activity-meta">
+            <span id="activity-meta-main"></span>
+            <span id="activity-meta-updated"></span>
+            <button class="text-btn" id="reload-btn" type="button">刷新数据</button>
           </div>
-          <aside class="hero-card" aria-label="数据状态">
-            <div class="hero-card-head">
-              <span class="badge gold" id="status-badge-wrap">
-                <span class="dot"></span>
-                <span id="status-badge">正在读取</span>
-              </span>
-              <span class="badge" id="last-updated">更新 —</span>
-            </div>
-            <dl class="hero-meta">
-              <dt>活动</dt><dd id="meta-activity">—</dd>
-              <dt>数据源</dt><dd id="meta-source">—</dd>
-              <dt>倍率规则</dt><dd id="meta-multiplier">—</dd>
-              <dt>得分规则</dt><dd id="meta-score">—</dd>
-            </dl>
-            <div class="hero-actions">
-              <button class="btn" id="reload-btn" type="button">重新加载数据</button>
-              <button class="btn" id="back-btn" type="button">活动列表</button>
-            </div>
-          </aside>
         </header>
 
-        <div class="loading" id="loading">正在载入数据…</div>
+        <div class="loading" id="loading">正在载入…</div>
         <div class="notice hidden" id="error-panel" role="alert"></div>
         <div class="notice warn hidden" id="warning-panel" role="status"></div>
 
-        <section class="section reveal" id="section-overview" style="--delay:80ms">
+        <section class="section" id="section-overview">
           <div class="section-head">
-            <span class="section-index">01</span>
-            <h2 class="section-title">概览</h2>
-            <p class="section-caption" id="overview-caption">—</p>
+            <h2>概览</h2>
+            <p class="section-caption" id="overview-caption"></p>
           </div>
           <div class="kpi-grid" id="kpis"></div>
           <div class="panel insights-panel">
-            <div class="panel-kicker">自动结论</div>
-            <div class="insights" id="insights"></div>
+            <h3 class="panel-title">要点</h3>
+            <div id="insights" class="insights"></div>
           </div>
         </section>
 
-        <section class="section reveal" id="section-strategy" style="--delay:140ms">
+        <section class="section" id="section-strategy">
           <div class="section-head">
-            <span class="section-index">02</span>
-            <h2 class="section-title">策略回测</h2>
-            <p class="section-caption" id="strategy-caption">每场固定 50 券，比较四种朴素选边方式；另附全押中的固定 50 参考上限。</p>
+            <h2>策略回测</h2>
+            <p class="section-caption">每场 50 券，固定选边。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
-              <div class="panel-kicker">累计得分</div>
+              <div class="panel-title">累计得分</div>
               <div class="chart tall" id="strategy-cum-chart" role="img" aria-label="各固定策略累计得分曲线"></div>
             </div>
             <div class="panel">
-              <div class="panel-kicker">得分构成：保底 + 加成</div>
+              <div class="panel-title">得分构成</div>
               <div class="chart tall" id="strategy-final-chart" role="img" aria-label="各固定策略得分构成"></div>
             </div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-kicker">策略汇总</div>
+            <div class="panel-title">策略汇总</div>
             <div class="table-wrap" id="strategy-table"></div>
           </div>
         </section>
 
-        <section class="section reveal" id="section-random" style="--delay:200ms">
+        <section class="section" id="section-random">
           <div class="section-head">
-            <span class="section-index">03</span>
-            <h2 class="section-title">随机策略分布</h2>
-            <p class="section-caption" id="random-caption">随机性只来自选边；结果固定。精确卷积，非蒙特卡洛。</p>
+            <h2>随机策略</h2>
+            <p class="section-caption">比赛结果不变，只让选边随机。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
-              <div class="panel-kicker">最终得分分布</div>
+              <div class="panel-title">最终得分分布</div>
               <div class="chart tall" id="hist-chart" role="img" aria-label="随机策略最终得分直方图"></div>
             </div>
             <div class="panel">
-              <div class="panel-kicker">累计分布函数 CDF</div>
+              <div class="panel-title">累计概率</div>
               <div class="chart tall" id="cdf-chart" role="img" aria-label="随机策略累计分布函数"></div>
             </div>
           </div>
           <div class="panel">
-            <div class="panel-kicker">逐日累计分位带 · 阴影为 P20–P80</div>
+            <div class="panel-title">逐日累计 · 阴影为 20%–80% 分位</div>
             <div class="chart tall" id="daily-band-chart" role="img" aria-label="随机策略逐日累计分位带"></div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-kicker">随机策略统计</div>
+            <div class="panel-title">随机策略统计</div>
             <div class="table-wrap" id="random-table"></div>
           </div>
         </section>
 
-        <section class="section reveal" id="section-odds" style="--delay:260ms">
+        <section class="section" id="section-odds">
           <div class="section-head">
-            <span class="section-index">04</span>
-            <h2 class="section-title">支持率 × 倍率</h2>
-            <p class="section-caption" id="odds-caption">只讨论支持率与赔率的关系，不涉及队伍强弱或比赛内容。</p>
+            <h2>支持率与倍率</h2>
+            <p class="section-caption">支持率越低，赔率越高；不涉及队伍强弱。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
-              <div class="panel-kicker">赔率观测点</div>
+              <div class="panel-title">赔率观测</div>
               <div class="chart tall" id="odds-chart" role="img" aria-label="支持率与赔率散点图"></div>
             </div>
             <div class="panel">
-              <div class="panel-kicker">热门方胜率 · 按支持率分档</div>
+              <div class="panel-title">热门方胜率</div>
               <div class="chart tall" id="favorite-chart" role="img" aria-label="热门方胜率按支持率分档"></div>
             </div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-kicker">支持率分档明细</div>
+            <div class="panel-title">支持率分档</div>
             <div class="table-wrap" id="bucket-table"></div>
           </div>
         </section>
 
-        <section class="section reveal" id="section-god" style="--delay:320ms">
+        <section class="section" id="section-god">
           <div class="section-head">
-            <span class="section-index">05</span>
-            <h2 class="section-title">上帝视角</h2>
-            <p class="section-caption" id="god-caption">在已知胜负的前提下，允许攒券、单场押任意金额时的最优分配。</p>
+            <h2>上帝视角</h2>
+            <p class="section-caption">假设提前知道胜负，并可以攒券集中下注。</p>
           </div>
-          <div class="kpi-grid small" id="god-kpis"></div>
           <div class="panel table-panel">
-            <div class="panel-kicker">当前最优下注计划</div>
+            <div class="panel-title">最优计划</div>
             <div class="table-wrap" id="god-plan-table"></div>
             <div class="prefix-strip" id="god-prefixes"></div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-kicker">每日得分与累计</div>
+            <div class="panel-title">每日得分</div>
             <div class="chart tall" id="god-chart" role="img" aria-label="上帝视角每日得分与累计"></div>
           </div>
         </section>
 
-        <section class="section reveal" id="section-data" style="--delay:380ms">
+        <section class="section" id="section-data">
           <div class="section-head">
-            <span class="section-index">06</span>
-            <h2 class="section-title">数据与方法</h2>
-            <p class="section-caption" id="data-caption">—</p>
+            <h2>数据</h2>
+            <p class="section-caption" id="data-caption"></p>
           </div>
           <div class="panel table-panel">
-            <div class="panel-kicker">完整比赛数据</div>
             <div class="table-wrap" id="match-table"></div>
           </div>
-          <div class="grid-2 align-start" style="margin-top:10px">
-            <div class="panel method">
-              <div class="panel-kicker">方法</div>
+          <details class="method-details">
+            <summary>方法与口径</summary>
+            <div class="method-grid">
               <div id="method-notes"></div>
-            </div>
-            <div class="panel method">
-              <div class="panel-kicker">口径与限制</div>
               <div id="caveats"></div>
             </div>
-          </div>
+          </details>
         </section>
       </section>
     </main>
-
-    <footer>
-      <div>静态站点 · 单页壳子 · 活动数据按文件拆分</div>
-      <div>适配 GitHub Pages · 无服务器依赖</div>
-    </footer>
   </div>
 
   <noscript>
-    <div class="notice">本页面需要启用 JavaScript 才能读取数据和绘制图表。</div>
+    <div class="notice">本页面需要启用 JavaScript 才能查看活动和图表。</div>
   </noscript>
 
   <script src="data/activities.js"></script>

@@ -9,6 +9,6 @@ window.ACTIVITY_INDEX = [
     startDate: "2026-10-12",
     status: "进行中",
     dataFile: "data/7.1-261012.js",
-    description: "支持率、倍率与下注策略回测。包含固定 50 券策略、随机分布与上帝视角。"
+    description: "支持率、倍率与下注策略回测。"
   }
 ];
