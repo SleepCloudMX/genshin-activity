@@ -35,8 +35,8 @@
       text: '#23201c',
       muted: '#746d63',
       faint: '#a49b8e',
-      line: '#e3dccf',
-      lineSoft: '#ede7dc',
+      line: '#e8e5df',
+      lineSoft: '#f0eeea',
       grid: 'rgba(35,32,28,.07)',
       gold: '#b44536',
       goldStrong: '#8f3227',
@@ -44,10 +44,10 @@
       jade: '#2f6f62',
       blue: '#43617e',
       violet: '#7b6a8a',
-      panel: '#fffdf9',
-      panel2: '#f8f4ec',
-      tooltipBg: '#fffdf9',
-      tooltipBorder: '#cfc5b5',
+      panel: '#ffffff',
+      panel2: '#f7f7f5',
+      tooltipBg: '#ffffff',
+      tooltipBorder: '#d6d1c8',
       baseBar: 'rgba(116,109,99,.20)',
       coinBand: 'rgba(180,69,54,.10)',
       supportBand: 'rgba(47,111,98,.10)',
@@ -514,7 +514,7 @@
       : `为 ${minorityMults.join(' / ')} 倍`;
     items.push(`热门方 ${majority.wins}/${model.matches.length} 胜，胜场倍率 ${majorityRange}；冷门方 ${minority.wins} 次获胜${minorityText}。`);
 
-    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：抛硬币 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}。`);
+    items.push(`每场 50 券、随机选边时，达到 ${fmt(model.full)} 分的概率：均匀分布 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}。`);
 
     const byOdds = new Map();
     for (const point of result.buckets.oddsPoints) {
@@ -571,7 +571,7 @@
     const bodyHtml = rows.map((row) => {
       const cls = row.__class || '';
       const cells = row.cells.map((cell, i) =>
-        `<td class="${numericCols.includes(i) ? 'num' : ''}">${cell}</td>`
+        `<td class="${numericCols.includes(i) ? 'num' : ''}" data-label="${esc(headers[i] || '')}">${cell}</td>`
       ).join('');
       return `<tr class="${cls}">${cells}</tr>`;
     }).join('');
@@ -680,7 +680,7 @@
       };
     });
     $('#strategy-table').innerHTML = table(
-      ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '抛硬币分位', '加权分位'],
+      ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '均匀分布分位', '加权分位'],
       rows,
       [1, 2, 3, 4, 6, 7]
     ) + `<p class="table-note">分位 = 该随机策略得分不超过此得分的概率。</p>`;
@@ -688,8 +688,8 @@
 
   function renderRandomTable(model, result) {
     const rows = [
-      { name: '抛硬币选边', stats: result.coin.stats },
-      { name: '按支持率加权选边', stats: result.support.stats }
+      { name: '均匀分布', stats: result.coin.stats },
+      { name: '按支持率加权', stats: result.support.stats }
     ].map(({ name, stats }) => ({
       cells: [
         esc(name),
@@ -709,31 +709,7 @@
       ['策略', '期望', '中位数', 'P20', 'P80', 'P5', 'P95', '最低', '最高', `P(≥${fmt(model.full)})`, `P(≥${fmt(model.original)})`],
       rows,
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ) + `<p class="table-note">按支持率加权：每场按双方支持率随机选边。</p>`;
-  }
-
-  function renderOddsPointsTable(model, result) {
-    const points = [...result.buckets.oddsPoints]
-      .sort((a, b) => a.support - b.support || b.odds - a.odds);
-    const loserCount = result.buckets.oddsPoints.filter((p) => p.role === 'loser').length;
-    const rows = points.map((point) => {
-      const source = point.match
-        ? `第 ${point.match.day} 天 · 第 ${point.match.match} 场 · ${SIDE_LABEL[point.side]}`
-        : '—';
-      const role = point.role === 'winner' ? '胜方' : '已知败方';
-      return {
-        cells: [
-          `${point.support}%`,
-          `${point.odds}×`,
-          `${source} · ${role}`
-        ]
-      };
-    });
-    $('#odds-points-table').innerHTML = table(
-      ['支持率', '赔率', '来源'],
-      rows,
-      [0, 1]
-    ) + `<p class="table-note">按支持率升序排列。败方赛前赔率目前记录了 ${loserCount} 个。</p>`;
+    ) + `<p class="table-note">均匀分布：每场 50 券，左右两边等概率。按支持率加权：每场 50 券，按双方支持率决定选边概率。</p>`;
   }
 
   function renderBucketTable(model, result) {
@@ -742,20 +718,18 @@
         .sort((a, b2) => a - b2)
         .map((o) => `${o}×`)
         .join(' / ');
-      const fav = b.favoriteN ? `${b.favoriteWins}/${b.favoriteN}` : '—';
       return {
         cells: [
           `${b.min}–${b.max}%`,
           odds || '<span class="faint">—</span>',
-          b.points.length || '—',
-          fav
+          b.points.length || '—'
         ]
       };
     });
     $('#bucket-table').innerHTML = table(
-      ['支持率区间', '倍率', '赔率点', '热门方胜率'],
+      ['支持率区间', '倍率', '赔率点'],
       rows,
-      [1, 2, 3]
+      [1, 2]
     ) + `<p class="table-note">空档表示该区间还没有赔率记录。</p>`;
   }
 
@@ -838,7 +812,7 @@
     $('#method-notes').innerHTML = `<ul>
       <li><strong>得分</strong>：押 n 券，按结算倍率获得积分；押错固定 10 倍。</li>
       <li><strong>固定策略</strong>：每场 50 券，比较全押左、全押右、押热门、押冷门四种选边方式。</li>
-      <li><strong>随机策略</strong>：每场按概率选边，穷举所有可能结果。</li>
+      <li><strong>随机策略</strong>：每场 50 券，按概率选边，穷举所有可能结果。</li>
       <li><strong>上帝视角上界</strong>：假设提前知道胜负；每天开始时发 ${model.dailyGrant} 券，最多持有 ${model.holdingCap} 券，可以攒券集中下注。</li>
       <li><strong>奖励线</strong>：${fmt(model.original)} 分原始奖励；${fmt(model.full)} 分满奖励。</li>
       <li><strong>回测范围</strong>：已记录 ${model.matches.length} 场。</li>
@@ -1088,7 +1062,7 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['抛硬币选边', '按支持率加权选边']),
+      legend: legendStyle(p, ['均匀分布', '按支持率加权选边']),
       tooltip: tooltipStyle(p, (params) => {
         const idx = params[0].dataIndex;
         const bin = hist.bins[idx];
@@ -1107,7 +1081,7 @@
       }),
       series: [
         {
-          name: '抛硬币选边',
+          name: '均匀分布',
           type: 'bar',
           data: hist.coin,
           barGap: '8%',
@@ -1158,7 +1132,7 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['抛硬币选边', '按支持率加权选边']),
+      legend: legendStyle(p, ['均匀分布', '按支持率加权选边']),
       tooltip: tooltipStyle(p, (params) => {
         const score = params[0]?.value?.[0];
         return `<b>得分 ${fmt(score)}</b><br>` + params
@@ -1180,7 +1154,7 @@
       }),
       series: [
         {
-          name: '抛硬币选边',
+          name: '均匀分布',
           type: 'line',
           step: 'end',
           showSymbol: false,
@@ -1264,14 +1238,25 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['抛硬币中位数', '按支持率加权中位数']),
+      legend: legendStyle(p, ['均匀分布中位数', '按支持率加权中位数']),
       tooltip: tooltipStyle(p, (params) => {
         const idx = params[0]?.dataIndex ?? 0;
-        const c = coin[idx];
-        const s = support[idx];
-        return `<b>第 ${days[idx]} 天</b><br>
-          <span style="color:${p.gold}">●</span> 抛硬币：P20 ${fmt(c.p20)} · 中位 <b>${fmt(c.median)}</b> · P80 ${fmt(c.p80)}<br>
-          <span style="color:${p.jade}">●</span> 按支持率加权：P20 ${fmt(s.p20)} · 中位 <b>${fmt(s.median)}</b> · P80 ${fmt(s.p80)}`;
+        const rows = [
+          { name: '均匀分布', color: p.gold, stats: coin[idx] },
+          { name: '按支持率加权', color: p.jade, stats: support[idx] }
+        ];
+        return `<div class="chart-tip">
+          <div class="chart-tip-title">第 ${days[idx]} 天 · 累计得分</div>
+          <table class="chart-tip-table">
+            <thead><tr><th></th><th>P20</th><th>中位</th><th>P80</th></tr></thead>
+            <tbody>${rows.map((row) => `<tr>
+              <td><span class="chart-tip-dot" style="background:${row.color}"></span>${row.name}</td>
+              <td>${fmt(row.stats.p20)}</td>
+              <td>${fmt(row.stats.median)}</td>
+              <td>${fmt(row.stats.p80)}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
       }),
       grid: { left: 66, right: 24, top: 48, bottom: 44, containLabel: true },
       xAxis: axisStyle(p, { data: days.map((d) => `D${d}`), boundaryGap: false }),
@@ -1280,7 +1265,7 @@
         labels: { formatter: (v) => compact(v) }
       }),
       series: [
-        ...bandSeries('抛硬币', coin, p.gold, p.coinBand, 'coinBand'),
+        ...bandSeries('均匀分布', coin, p.gold, p.coinBand, 'coinBand'),
         ...bandSeries('按支持率加权', support, p.jade, p.supportBand, 'supportBand')
       ].map((series, index) => {
         if (index === 2) series.markLine = thresholdMarkLines(p, model.full, model.original);
@@ -1500,7 +1485,6 @@
     renderInsights(result);
     renderStrategyTable(model, result);
     renderRandomTable(model, result);
-    renderOddsPointsTable(model, result);
     renderBucketTable(model, result);
     renderGodPlan(model, result);
     renderMatchTable(model);

@@ -75,10 +75,26 @@
           </div>
         </section>
 
+        <section class="section" id="section-god">
+          <div class="section-head">
+            <h2>上帝视角</h2>
+            <p class="section-caption">理论上界：假设提前知道胜负，并可以攒券集中下注。</p>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-title">上界计划</div>
+            <div class="table-wrap" id="god-plan-table"></div>
+            <div class="prefix-strip" id="god-prefixes"></div>
+          </div>
+          <div class="panel table-panel">
+            <div class="panel-title">每日得分</div>
+            <div class="chart tall" id="god-chart" role="img" aria-label="上帝视角每日得分与累计"></div>
+          </div>
+        </section>
+
         <section class="section" id="section-strategy">
           <div class="section-head">
             <h2>策略回测</h2>
-            <p class="section-caption">以下策略按每场 50 券评估，固定选边。</p>
+            <p class="section-caption">以下策略按<strong>每场 50 券</strong>评估，固定选边。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
@@ -99,7 +115,7 @@
         <section class="section" id="section-random">
           <div class="section-head">
             <h2>随机策略</h2>
-            <p class="section-caption">比赛结果不变，只让选边随机。</p>
+            <p class="section-caption">每场 <strong>50 券</strong>，结果固定，只让选边随机。</p>
           </div>
           <div class="grid-2">
             <div class="panel">
@@ -116,8 +132,8 @@
             <div class="chart tall" id="daily-band-chart" role="img" aria-label="随机策略逐日累计分位带"></div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-title">随机策略统计</div>
-            <div class="table-wrap" id="random-table"></div>
+            <div class="panel-title">随机策略统计 · 每场 50 券</div>
+            <div class="table-wrap responsive" id="random-table"></div>
           </div>
         </section>
 
@@ -137,28 +153,8 @@
             </div>
           </div>
           <div class="panel table-panel">
-            <div class="panel-title">赔率观测</div>
-            <div class="table-wrap" id="odds-points-table"></div>
-          </div>
-          <div class="panel table-panel">
             <div class="panel-title">支持率分档</div>
             <div class="table-wrap" id="bucket-table"></div>
-          </div>
-        </section>
-
-        <section class="section" id="section-god">
-          <div class="section-head">
-            <h2>上帝视角</h2>
-            <p class="section-caption">理论上界：假设提前知道胜负，并可以攒券集中下注。</p>
-          </div>
-          <div class="panel table-panel">
-            <div class="panel-title">上界计划</div>
-            <div class="table-wrap" id="god-plan-table"></div>
-            <div class="prefix-strip" id="god-prefixes"></div>
-          </div>
-          <div class="panel table-panel">
-            <div class="panel-title">每日得分</div>
-            <div class="chart tall" id="god-chart" role="img" aria-label="上帝视角每日得分与累计"></div>
           </div>
         </section>
 
