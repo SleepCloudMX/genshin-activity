@@ -1,6 +1,7 @@
 // 判测胜券本征 7.1-261012 数据。
-// 修改后直接刷新 index.html；无需构建或本地服务器。
-window.ACTIVITY_DATA = {
+// 修改后刷新页面；由 index.html 按 ?activity=7.1-261012 动态加载。
+window.ACTIVITY_DATA_BY_ID = window.ACTIVITY_DATA_BY_ID || {};
+window.ACTIVITY_DATA_BY_ID["7.1-261012"] = {
   "schemaVersion": 1,
   "activity": {
     "id": "7.1-261012",

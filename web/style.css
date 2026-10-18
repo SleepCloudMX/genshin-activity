@@ -109,6 +109,129 @@ code, pre { font-family: var(--font-mono); }
   padding: 12px 0 64px;
 }
 
+/* ---------- site nav ---------- */
+
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.site-brand {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: .02em;
+}
+
+.site-brand:hover { color: var(--gold); text-decoration: none; }
+
+.site-nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- index ---------- */
+
+.index-hero {
+  padding: clamp(40px, 6vw, 78px) 0 clamp(28px, 4vw, 46px);
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+.activity-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  color: var(--text);
+  text-decoration: none;
+  transition: transform .18s ease, border-color .18s ease;
+}
+
+.activity-card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 14px;
+  width: 42px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.activity-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  text-decoration: none;
+}
+
+.activity-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.activity-card h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.activity-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.activity-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.activity-card-cta {
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.index-note { margin-top: 10px; }
+.index-note p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.index-note code {
+  padding: 2px 5px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 11px;
+}
+
 /* ---------- hero ---------- */
 
 .hero {
@@ -665,6 +788,8 @@ footer code {
 
 @media (max-width: 760px) {
   .page { width: calc(100% - 24px); }
+  .site-nav { flex-wrap: wrap; }
+  .activity-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: clamp(36px, 12vw, 58px); }
   .kpi-grid,
   .kpi-grid.small { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -86,16 +86,55 @@
 
   let currentTheme = document.documentElement.dataset.theme || 'light';
   let current = null;
+  let loadToken = 0;
+  let echartsPromise = null;
   const charts = [];
 
   const palette = () => PALETTES[currentTheme] || PALETTES.light;
 
-  // ---------- data loading and validation ----------
+  // ---------- activity index and data loading ----------
 
-  function activitySource() {
-    const script = document.getElementById('activity-data');
-    const href = script?.getAttribute('src') || 'data/7.1-261012.js';
-    return { href, path: href, name: href.split('/').pop() || href };
+  const activityIndex = () => Array.isArray(window.ACTIVITY_INDEX) ? window.ACTIVITY_INDEX : [];
+  const dataRegistry = () => window.ACTIVITY_DATA_BY_ID || {};
+  const indexEntry = (id) => activityIndex().find((entry) => entry.id === id) || null;
+
+  function sourceFromEntry(entry) {
+    const path = entry?.dataFile || '';
+    return { href: path, path, name: path.split('/').pop() || path };
+  }
+
+  function loadScript(src, activityId) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      if (activityId) script.dataset.activityData = activityId;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`无法加载数据文件：${src}`));
+      document.body.appendChild(script);
+    });
+  }
+
+  async function ensureActivityData(id, { reload = false } = {}) {
+    const entry = indexEntry(id);
+    if (!entry) throw new Error(`活动索引中不存在：${id}`);
+    if (!reload && dataRegistry()[id]) return dataRegistry()[id];
+    if (reload) {
+      delete dataRegistry()[id];
+      document.querySelectorAll('script[data-activity-data]').forEach((script) => {
+        if (script.dataset.activityData === id) script.remove();
+      });
+    }
+    const src = reload ? `${entry.dataFile}?v=${Date.now()}` : entry.dataFile;
+    await loadScript(src, id);
+    const data = dataRegistry()[id];
+    if (!data) throw new Error(`数据文件未注册活动 ${id}：${entry.dataFile}`);
+    return data;
+  }
+
+  function ensureECharts() {
+    if (window.echarts) return Promise.resolve();
+    if (!echartsPromise) echartsPromise = loadScript('web/vendor/echarts.min.js');
+    return echartsPromise;
   }
 
   function nullableNumber(v) {
@@ -600,18 +639,14 @@
 
   function renderHeader(model, result, source) {
     document.title = `${model.name} · 支持率与倍率分析`;
+    setText('#hero-eyebrow', [model.game, model.version, model.phase].filter(Boolean).join(' · ') || '活动分析');
+    setText('#hero-title', model.name);
     setText('#status-badge', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
     setText('#last-updated', `更新 ${model.lastUpdated}`);
     setText('#meta-activity', [model.game, model.version, model.phase, model.startDate].filter(Boolean).join(' · ') || '—');
     setText('#meta-source', source.path);
     setText('#meta-multiplier', `败方 ${model.losing}× · 上限 ${model.maxMultiplier}×`);
     setText('#meta-score', `押 n 券 → n × 结算倍率积分`);
-
-    const dataLink = $('#data-link');
-    if (dataLink) {
-      dataLink.href = source.href;
-      dataLink.textContent = source.path;
-    }
 
     const badgeWrap = $('#status-badge-wrap');
     if (badgeWrap) {
@@ -1520,63 +1555,161 @@
     hideLoading();
   }
 
-  // ---------- boot ----------
+  // ---------- router ----------
 
-  function boot() {
+  function showIndexView() {
+    $('#index-view')?.classList.remove('hidden');
+    $('#dashboard-view')?.classList.add('hidden');
+    $('#nav-list-btn')?.classList.add('hidden');
+    disposeCharts();
+    current = null;
+    window.__analysis = null;
+    document.title = '原神活动数据分析';
+  }
+
+  function showDashboardView() {
+    $('#index-view')?.classList.add('hidden');
+    $('#dashboard-view')?.classList.remove('hidden');
+    $('#nav-list-btn')?.classList.remove('hidden');
+  }
+
+  function renderIndex() {
+    showIndexView();
+    const entries = activityIndex();
+    const cards = entries.map((entry) => {
+      const statusClass = entry.status === '已结束' ? '' : 'jade';
+      const meta = [
+        entry.game,
+        entry.startDate ? `开始 ${entry.startDate}` : '',
+        entry.dataFile
+      ].filter(Boolean).map(esc).map((text) => `<span>${text}</span>`).join('');
+      return `<a class="activity-card" href="?event=${encodeURIComponent(entry.id)}" data-activity-id="${esc(entry.id)}">
+        <div class="activity-card-top">
+          <span class="badge gold">${esc([entry.version, entry.phase].filter(Boolean).join(' '))}</span>
+          <span class="badge ${statusClass}">${esc(entry.status || '进行中')}</span>
+        </div>
+        <h2>${esc(entry.name)}</h2>
+        <p>${esc(entry.description || '')}</p>
+        <div class="activity-card-meta">${meta}</div>
+        <span class="activity-card-cta">打开分析 →</span>
+      </a>`;
+    }).join('');
+    $('#activity-cards').innerHTML = cards || '<div class="notice warn">活动索引为空。请检查 <code>data/activities.js</code>。</div>';
+    setText('#index-caption', entries.length
+      ? `${entries.length} 个活动 · 数据按文件拆分 · 无服务器`
+      : '0 个活动 · 请检查 data/activities.js');
+  }
+
+  async function openActivity(id, { push = true } = {}) {
+    const entry = indexEntry(id);
+    if (!entry) { renderIndex(); return; }
+    if (push) {
+      const url = new URL(location.href);
+      url.searchParams.set('event', id);
+      history.pushState({ event: id }, '', url);
+    }
+    showDashboardView();
+    setText('#hero-title', entry.name || '活动分析');
+    setText('#hero-eyebrow', [entry.game, entry.version, entry.phase].filter(Boolean).join(' · ') || '活动分析');
+    setText('#status-badge', '正在读取');
     showLoading();
     disposeCharts();
-    const source = activitySource();
+    document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.add('hidden'));
+    $('#error-panel')?.classList.add('hidden');
+    $('#warning-panel')?.classList.add('hidden');
+    const token = ++loadToken;
     try {
-      const raw = window.ACTIVITY_DATA;
-      if (!raw) {
-        throw new Error(`未找到 ACTIVITY_DATA。请确认 index.html 已加载 ${source.path}。`);
-      }
-      const model = normalize(raw);
-      if (model.errors.length) {
-        showError('数据校验失败', model.errors.join('；'), `请检查 ${source.path} 的结构。`);
-        document.querySelectorAll('.section').forEach((section) => section.classList.add('hidden'));
-        return;
-      }
-      document.querySelectorAll('.section').forEach((section) => section.classList.remove('hidden'));
-      showWarnings(model.warnings);
-      const result = computeAnalysis(model);
-      current = { model, result, source };
-      renderAll(model, result, source);
-      window.__analysis = {
-        url: source.path,
-        source: source.path,
-        activity: model.activity,
-        matchCount: model.matches.length,
-        stamp: {
-          recordedDays: model.days.length,
-          expectedDays: model.totalDays,
-          expectedMatches: model.expectedMatches,
-          full: model.full,
-          original: model.original,
-          base: result.base
-        },
-        totals: Object.fromEntries(result.deterministic.map((s) => [s.id, s.total])),
-        wins: Object.fromEntries(result.deterministic.map((s) => [s.id, s.wins])),
-        random: {
-          coin: result.coin.stats,
-          support: result.support.stats
-        },
-        god: {
-          total: result.god.total,
-          used: result.god.used,
-          plan: result.god.plan.map((p) => ({
-            day: p.day,
-            match: p.match ? p.match.match : null,
-            stake: p.stake,
-            points: p.points,
-            balanceAfter: p.balanceAfter
-          })),
-          prefixes: result.godPrefixes.map((g) => ({ day: g.horizon, total: g.total }))
-        }
-      };
+      const [raw] = await Promise.all([ensureActivityData(id), ensureECharts()]);
+      if (token !== loadToken) return;
+      renderActivity(raw, id, entry);
     } catch (err) {
-      showError('载入数据失败', err?.message || String(err), `请确认 ${source.path} 存在且语法正确。`);
-      document.querySelectorAll('.section').forEach((section) => section.classList.add('hidden'));
+      if (token !== loadToken) return;
+      showError('载入活动失败', err?.message || String(err), `请检查 ${entry.dataFile} 是否存在，并注册了活动 ${id}。`);
+    }
+  }
+
+  async function reloadCurrentActivity() {
+    if (!current) return;
+    const { activityId, entry } = current;
+    const token = ++loadToken;
+    showLoading();
+    disposeCharts();
+    document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.add('hidden'));
+    try {
+      const [raw] = await Promise.all([
+        ensureActivityData(activityId, { reload: true }),
+        ensureECharts()
+      ]);
+      if (token !== loadToken) return;
+      renderActivity(raw, activityId, entry);
+    } catch (err) {
+      if (token !== loadToken) return;
+      showError('重新加载失败', err?.message || String(err), `请检查 ${entry.dataFile}。`);
+    }
+  }
+
+  function closeActivity({ push = true } = {}) {
+    const url = new URL(location.href);
+    if (push && url.searchParams.has('event')) {
+      url.searchParams.delete('event');
+      history.pushState({}, '', url);
+    }
+    renderIndex();
+  }
+
+  function renderActivity(raw, id, entry) {
+    const source = sourceFromEntry(entry);
+    const model = normalize(raw);
+    if (model.errors.length) {
+      showError('数据校验失败', model.errors.join('；'), `请检查 ${source.path} 的结构。`);
+      return;
+    }
+    document.querySelectorAll('#dashboard-view .section').forEach((section) => section.classList.remove('hidden'));
+    showWarnings(model.warnings);
+    const result = computeAnalysis(model);
+    current = { model, result, source, activityId: id, entry };
+    renderAll(model, result, source);
+    window.__analysis = {
+      activityId: id,
+      url: source.path,
+      source: source.path,
+      activity: model.activity,
+      matchCount: model.matches.length,
+      stamp: {
+        recordedDays: model.days.length,
+        expectedDays: model.totalDays,
+        expectedMatches: model.expectedMatches,
+        full: model.full,
+        original: model.original,
+        base: result.base
+      },
+      totals: Object.fromEntries(result.deterministic.map((s) => [s.id, s.total])),
+      wins: Object.fromEntries(result.deterministic.map((s) => [s.id, s.wins])),
+      random: {
+        coin: result.coin.stats,
+        support: result.support.stats
+      },
+      god: {
+        total: result.god.total,
+        used: result.god.used,
+        plan: result.god.plan.map((p) => ({
+          day: p.day,
+          match: p.match ? p.match.match : null,
+          stake: p.stake,
+          points: p.points,
+          balanceAfter: p.balanceAfter
+        })),
+        prefixes: result.godPrefixes.map((g) => ({ day: g.horizon, total: g.total }))
+      }
+    };
+  }
+
+  function route() {
+    const id = new URLSearchParams(location.search).get('event');
+    if (id && indexEntry(id)) {
+      openActivity(id, { push: false });
+    } else {
+      renderIndex();
     }
   }
 
@@ -1599,9 +1732,23 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme(currentTheme);
-    $('#reload-btn')?.addEventListener('click', () => location.reload());
+    $('#reload-btn')?.addEventListener('click', reloadCurrentActivity);
+    $('#back-btn')?.addEventListener('click', () => closeActivity());
+    $('#nav-list-btn')?.addEventListener('click', () => closeActivity());
+    $('#site-home')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeActivity();
+    });
     $('#theme-btn')?.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+    document.addEventListener('click', (event) => {
+      const card = event.target.closest('[data-activity-id]');
+      if (!card) return;
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openActivity(card.dataset.activityId);
+    });
+    window.addEventListener('popstate', route);
     window.addEventListener('resize', debounce(() => charts.forEach((chart) => chart.resize()), 120));
-    boot();
+    route();
   });
 })();
