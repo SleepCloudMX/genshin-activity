@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Serve the static dashboard from the project root.
+"""Optional HTTP server for index.html.
 
-The report reads its JSON at runtime, so editing data/*.json and refreshing
-the page is enough; there is no build step.
+The primary entry is ./index.html, which can be opened directly; this script
+exists only for debugging over HTTP.
 """
 
 import argparse
@@ -11,10 +11,8 @@ import threading
 import webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA = "data/7.1-261012.json"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -31,33 +29,15 @@ class Handler(SimpleHTTPRequestHandler):
         sys.stderr.write("[serve] " + format % args + "\n")
 
 
-def data_url_from_arg(value: str) -> str:
-    path = Path(value)
-    if not path.is_absolute():
-        path = ROOT / path
-    path = path.resolve()
-    try:
-        relative = path.relative_to(ROOT)
-    except ValueError:
-        raise SystemExit(f"data file must be inside the project: {path}")
-    if not path.is_file():
-        raise SystemExit(f"data file not found: {path}")
-    return "../" + relative.as_posix()
-
-
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Serve the activity analysis dashboard")
+    parser = argparse.ArgumentParser(description="Optional HTTP server for the dashboard")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--data", default=DEFAULT_DATA, help="JSON data file, relative to the project root")
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
 
-    page = f"/web/index.html?data={quote(data_url_from_arg(args.data))}"
-    url = f"http://127.0.0.1:{args.port}{page}"
-
+    url = f"http://127.0.0.1:{args.port}/index.html"
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print(f"Serving {ROOT}")
-    print(f"Data    {args.data}")
     print(f"Open    {url}")
     print("Ctrl+C to stop.")
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,12 +9,12 @@
   <script>
     try {
       document.documentElement.dataset.theme =
-        localStorage.getItem('activity-analysis-theme') || 'dark';
+        localStorage.getItem('activity-analysis-theme') || 'light';
     } catch (e) {
-      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.dataset.theme = 'light';
     }
   </script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="web/style.css">
 </head>
 <body>
   <div class="page">
@@ -40,13 +40,13 @@
         </dl>
         <div class="hero-actions">
           <button class="btn" id="reload-btn" type="button">重新加载数据</button>
-          <button class="btn" id="theme-btn" type="button">切换亮色</button>
+          <button class="btn" id="theme-btn" type="button">切换暗色</button>
         </div>
       </aside>
     </header>
 
     <main id="main">
-      <div class="loading" id="loading">正在读取 JSON 数据…</div>
+      <div class="loading" id="loading">正在载入数据…</div>
       <div class="notice hidden" id="error-panel" role="alert"></div>
       <div class="notice warn hidden" id="warning-panel" role="status"></div>
 
@@ -176,10 +176,10 @@
 
     <footer>
       <div>
-        数据源 <a id="data-link" href="#">—</a> · 修改 JSON 后刷新页面或点击「重新加载数据」，无需重建。
+        数据源 <a id="data-link" href="#">—</a> · 修改数据文件后刷新页面或点击「重新加载数据」，无需构建。
       </div>
       <div>
-        本地查看：在项目根目录运行 <code>python scripts/serve.py</code>，使用 ai 环境。
+        入口 <code>index.html</code> · 双击即可打开，不依赖服务器。
       </div>
     </footer>
   </div>
@@ -188,7 +188,8 @@
     <div class="notice">本页面需要启用 JavaScript 才能读取数据和绘制图表。</div>
   </noscript>
 
-  <script src="vendor/echarts.min.js"></script>
-  <script src="app.js"></script>
+  <script src="web/vendor/echarts.min.js"></script>
+  <script src="data/7.1-261012.js" id="activity-data"></script>
+  <script src="web/app.js"></script>
 </body>
 </html>

@@ -1,7 +1,6 @@
 (() => {
   'use strict';
 
-  const DEFAULT_DATA = '../data/7.1-261012.json';
   const THEME_KEY = 'activity-analysis-theme';
   const SIDE_LABEL = { left: '左', right: '右' };
   const OPP = { left: 'right', right: 'left' };
@@ -85,28 +84,18 @@
     '全押中（固定 50/场）': '全押中*'
   }[name] || name);
 
-  let currentTheme = document.documentElement.dataset.theme || 'dark';
+  let currentTheme = document.documentElement.dataset.theme || 'light';
   let current = null;
-  let loadToken = 0;
   const charts = [];
 
-  const palette = () => PALETTES[currentTheme] || PALETTES.dark;
+  const palette = () => PALETTES[currentTheme] || PALETTES.light;
 
   // ---------- data loading and validation ----------
 
-  function dataUrl() {
-    const params = new URLSearchParams(location.search);
-    const url = params.get('data') || DEFAULT_DATA;
-    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(url) && !url.startsWith(location.origin)) {
-      throw new Error('只允许读取同源或相对路径的 JSON 数据。');
-    }
-    return url;
-  }
-
-  async function fetchData(url) {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`读取 JSON 失败：HTTP ${res.status}`);
-    return res.json();
+  function activitySource() {
+    const script = document.getElementById('activity-data');
+    const href = script?.getAttribute('src') || 'data/7.1-261012.js';
+    return { href, path: href, name: href.split('/').pop() || href };
   }
 
   function nullableNumber(v) {
@@ -609,19 +598,19 @@
 
   // ---------- header and KPIs ----------
 
-  function renderHeader(model, result, url) {
+  function renderHeader(model, result, source) {
     document.title = `${model.name} · 支持率与倍率分析`;
     setText('#status-badge', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
     setText('#last-updated', `更新 ${model.lastUpdated}`);
     setText('#meta-activity', [model.game, model.version, model.phase, model.startDate].filter(Boolean).join(' · ') || '—');
-    setText('#meta-source', url.split('/').pop() || url);
+    setText('#meta-source', source.path);
     setText('#meta-multiplier', `败方 ${model.losing}× · 上限 ${model.maxMultiplier}×`);
     setText('#meta-score', `押 n 券 → n × 结算倍率积分`);
 
     const dataLink = $('#data-link');
     if (dataLink) {
-      dataLink.href = url;
-      dataLink.textContent = url;
+      dataLink.href = source.href;
+      dataLink.textContent = source.path;
     }
 
     const badgeWrap = $('#status-badge-wrap');
@@ -629,7 +618,7 @@
       badgeWrap.className = model.warnings.length ? 'badge warn' : 'badge gold';
     }
     setText('#overview-caption', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场 · 每场 ${model.stake} 券`);
-    setText('#data-caption', `${url.split('/').pop()} · 记录 ${model.dataSource || '—'} · 赔率点 ${result.buckets.oddsPoints.length} 个`);
+    setText('#data-caption', `${source.name} · 记录 ${model.dataSource || '—'} · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
@@ -1517,8 +1506,8 @@
 
   // ---------- render all ----------
 
-  function renderAll(model, result, url) {
-    renderHeader(model, result, url);
+  function renderAll(model, result, source) {
+    renderHeader(model, result, source);
     renderKpis(model, result);
     renderInsights(result);
     renderStrategyTable(model, result);
@@ -1533,30 +1522,29 @@
 
   // ---------- boot ----------
 
-  async function boot() {
-    const token = ++loadToken;
+  function boot() {
     showLoading();
     disposeCharts();
-    let url;
+    const source = activitySource();
     try {
-      url = dataUrl();
-      const raw = await fetchData(url);
-      if (token !== loadToken) return;
+      const raw = window.ACTIVITY_DATA;
+      if (!raw) {
+        throw new Error(`未找到 ACTIVITY_DATA。请确认 index.html 已加载 ${source.path}。`);
+      }
       const model = normalize(raw);
       if (model.errors.length) {
-        showError('数据校验失败', model.errors.join('；'), location.protocol === 'file:'
-          ? '当前通过 file:// 打开页面，浏览器通常不允许读取本地 JSON。请运行：\npython scripts/serve.py'
-          : '');
+        showError('数据校验失败', model.errors.join('；'), `请检查 ${source.path} 的结构。`);
         document.querySelectorAll('.section').forEach((section) => section.classList.add('hidden'));
         return;
       }
       document.querySelectorAll('.section').forEach((section) => section.classList.remove('hidden'));
       showWarnings(model.warnings);
       const result = computeAnalysis(model);
-      current = { model, result, url };
-      renderAll(model, result, url);
+      current = { model, result, source };
+      renderAll(model, result, source);
       window.__analysis = {
-        url,
+        url: source.path,
+        source: source.path,
         activity: model.activity,
         matchCount: model.matches.length,
         stamp: {
@@ -1587,11 +1575,8 @@
         }
       };
     } catch (err) {
-      if (token !== loadToken) return;
-      const isFile = location.protocol === 'file:';
-      showError('读取数据失败', err?.message || String(err), isFile
-        ? '当前通过 file:// 打开页面，浏览器通常不允许读取本地 JSON。请在项目根目录运行：\npython scripts/serve.py\n然后打开脚本输出的地址。'
-        : '请确认 JSON 路径正确，并通过本地 HTTP 服务访问页面。');
+      showError('载入数据失败', err?.message || String(err), `请确认 ${source.path} 存在且语法正确。`);
+      document.querySelectorAll('.section').forEach((section) => section.classList.add('hidden'));
     }
   }
 
@@ -1614,7 +1599,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme(currentTheme);
-    $('#reload-btn')?.addEventListener('click', () => boot());
+    $('#reload-btn')?.addEventListener('click', () => location.reload());
     $('#theme-btn')?.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
     window.addEventListener('resize', debounce(() => charts.forEach((chart) => chart.resize()), 120));
     boot();
