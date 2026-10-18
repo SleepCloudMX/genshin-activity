@@ -385,11 +385,6 @@ html[data-theme="dark"] .icon-moon { display: none; }
   letter-spacing: 0;
 }
 
-.kpi-value.compact {
-  font-size: clamp(20px, 2.1vw, 27px);
-  letter-spacing: -.03em;
-}
-
 /* ---------- insights ---------- */
 
 .insights-panel { margin-top: 14px; }

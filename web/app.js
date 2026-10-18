@@ -578,10 +578,10 @@
     return `<table>${options.caption ? `<caption>${esc(options.caption)}</caption>` : ''}<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
   }
 
-  function kpi(label, value, sub, accent = '', compact = false) {
+  function kpi(label, value, sub, accent = '') {
     return `<article class="kpi ${accent}">
       <div class="kpi-label">${esc(label)}</div>
-      <div class="kpi-value ${compact ? 'compact' : ''}">${value}</div>
+      <div class="kpi-value">${value}</div>
       <div class="kpi-sub">${sub}</div>
     </article>`;
   }
@@ -637,17 +637,15 @@
   }
 
   function renderKpis(model, result) {
-    const fixed = result.deterministic.filter((s) => !s.reference);
-    const scores = fixed.map((s) => s.total);
-    const minScore = Math.min(...scores);
-    const maxScore = Math.max(...scores);
+    const oddsPoints = result.buckets.oddsPoints;
+    const loserCount = oddsPoints.filter((p) => p.role === 'loser').length;
     const kpis = [
       kpi('已记录', `${model.days.length}<span class="unit">/ ${model.totalDays} 天</span>`,
         `${model.matches.length} / ${model.expectedMatches} 场`),
       kpi('满奖励线', fmt(model.full),
         `原始奖励线 ${fmt(model.original)}`, 'accent'),
-      kpi('固定 50 券范围', `${fmt(minScore)}–${fmt(maxScore)}`,
-        '四种选边方式', '', true),
+      kpi('赔率记录', `${oddsPoints.length} 个`,
+        `${oddsPoints.length - loserCount} 个胜方 · ${loserCount} 个已知败方`),
       kpi('上帝视角上界', fmt(result.god.total),
         `已用 ${fmt(result.god.used)} 券`)
     ];
