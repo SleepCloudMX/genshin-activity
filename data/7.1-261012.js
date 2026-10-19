@@ -26,7 +26,7 @@ window.ACTIVITY_DATA_BY_ID["7.1-261012"] = {
       "full": 16000
     },
     "dataSource": "temp/261018/record.md",
-    "lastUpdated": "2026-10-18"
+    "lastUpdated": "2026-10-19"
   },
   "matches": [
     {
@@ -289,6 +289,50 @@ window.ACTIVITY_DATA_BY_ID["7.1-261012"] = {
       },
       "settlement": {
         "left": 35,
+        "right": 10
+      },
+      "winner": "left"
+    },
+    {
+      "id": "d07m01",
+      "day": 7,
+      "match": 1,
+      "teams": {
+        "left": "队伍1",
+        "right": "队伍2"
+      },
+      "support": {
+        "left": 23,
+        "right": 77
+      },
+      "odds": {
+        "left": null,
+        "right": 30
+      },
+      "settlement": {
+        "left": 10,
+        "right": 30
+      },
+      "winner": "right"
+    },
+    {
+      "id": "d07m02",
+      "day": 7,
+      "match": 2,
+      "teams": {
+        "left": "队伍1",
+        "right": "队伍2"
+      },
+      "support": {
+        "left": 47,
+        "right": 53
+      },
+      "odds": {
+        "left": 50,
+        "right": null
+      },
+      "settlement": {
+        "left": 50,
         "right": 10
       },
       "winner": "left"
