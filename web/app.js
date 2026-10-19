@@ -491,23 +491,13 @@
 
   function computeInsights(model, result) {
     const byId = Object.fromEntries(result.deterministic.map((s) => [s.id, s]));
-    const minority = byId.minority;
-    const majority = byId.majority;
+    const left = byId['all-left'];
+    const right = byId['all-right'];
     const items = [];
 
-    const majorityMults = majority.rows.filter((r) => r.win).map((r) => r.mult);
-    const majorityMin = majorityMults.length ? Math.min(...majorityMults) : null;
-    const majorityMax = majorityMults.length ? Math.max(...majorityMults) : null;
-    const majorityRange = majorityMin === null ? '—'
-      : (majorityMin === majorityMax ? `${majorityMin} 倍` : `${majorityMin}–${majorityMax} 倍`);
-    const minorityMults = [...new Set(minority.rows.filter((r) => r.win).map((r) => r.mult))]
-      .sort((a, b) => a - b);
-    const minorityText = minorityMults.length === 1
-      ? `全部为 ${minorityMults[0]} 倍`
-      : `为 ${minorityMults.join(' / ')} 倍`;
-    items.push(`热门方 ${majority.wins}/${model.matches.length} 胜，胜场倍率 ${majorityRange}；冷门方 ${minority.wins} 次获胜${minorityText}。`);
+    items.push(`每场 50 券：全押左累计 ${fmt(left.total)} 分（${left.wins}/${model.matches.length} 胜），全押右累计 ${fmt(right.total)} 分（${right.wins}/${model.matches.length} 胜）。`);
 
-    items.push(`每场 50 券、随机选边时，达到 ${fmt(model.full)} 分的概率：均匀分布 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}。`);
+    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：均匀分布 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
 
     const byOdds = new Map();
     for (const point of result.buckets.oddsPoints) {
@@ -625,20 +615,25 @@
     setText('#hero-title', model.name);
     setText('#activity-meta-main', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
     setText('#activity-meta-updated', `更新于 ${model.lastUpdated}`);
-    setText('#overview-caption', '基于已记录场次');
+    setText('#overview-caption', '基于已记录场次 · 固定与随机策略按每场 50 券评估');
     setText('#data-caption', `已记录 ${model.matches.length} 场 · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
-    const oddsPoints = result.buckets.oddsPoints;
-    const loserCount = oddsPoints.filter((p) => p.role === 'loser').length;
+    const byId = Object.fromEntries(result.deterministic.map((s) => [s.id, s]));
+    const vsFull = (strategy) => {
+      const delta = strategy.total - model.full;
+      return delta >= 0 ? `满奖励 +${fmt(delta)}` : `满奖励 −${fmt(-delta)}`;
+    };
+    const left = byId['all-left'];
+    const right = byId['all-right'];
     const kpis = [
-      kpi('已记录', `${model.days.length}<span class="unit">/ ${model.totalDays} 天</span>`,
-        `${model.matches.length} / ${model.expectedMatches} 场`),
-      kpi('满奖励线', fmt(model.full),
-        `原始奖励线 ${fmt(model.original)}`, 'accent'),
-      kpi('赔率记录', `${oddsPoints.length} 个`,
-        `${oddsPoints.length - loserCount} 个胜方 · ${loserCount} 个已知败方`),
+      kpi('全押左', fmt(left.total),
+        `${left.wins}/${model.matches.length} 胜 · ${vsFull(left)}`),
+      kpi('全押右', fmt(right.total),
+        `${right.wins}/${model.matches.length} 胜 · ${vsFull(right)}`),
+      kpi('均匀随机', pct(result.coin.stats.pFull),
+        `达到 ${fmt(model.full)}；<span class="nowrap">按支持率加权 ${pct(result.support.stats.pFull)}</span>`, 'accent'),
       kpi('上帝视角上界', fmt(result.god.total),
         `已用 ${fmt(result.god.used)} 券`)
     ];

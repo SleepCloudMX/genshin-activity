@@ -166,14 +166,6 @@ html[data-theme="dark"] .icon-moon { display: none; }
   line-height: .94;
 }
 
-.index-sub {
-  max-width: 46ch;
-  margin: 0;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.7;
-}
-
 .index-list-head {
   display: flex;
   align-items: baseline;
@@ -531,6 +523,7 @@ tbody tr:hover { background: var(--surface); }
 .gold { color: var(--accent); }
 .red { color: var(--accent); }
 .jade { color: var(--jade); }
+.nowrap { white-space: nowrap; }
 
 .winner-cell {
   color: var(--accent);
@@ -698,7 +691,7 @@ tbody tr:hover { background: var(--surface); }
   .activity-head { padding-top: 48px; }
   .activity-title { font-size: clamp(38px, 11vw, 56px); }
   .section-head { flex-wrap: wrap; gap: 8px; }
-  .section-caption { text-align: left; }
+  .section-caption { flex-basis: 100%; text-align: left; }
   .chart,
   .chart.tall { height: 320px; }
   .panel { padding: 16px; border-radius: 12px; }
