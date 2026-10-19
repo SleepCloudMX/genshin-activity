@@ -1120,19 +1120,20 @@
     });
   }
 
-  function renderCdfChart(model, result) {
+  function renderReachChart(model, result) {
     const p = palette();
-    const toCdf = (stats) => {
-      let acc = 0;
+    const toReach = (stats) => {
+      let remaining = 1;
       return stats.items.map((it) => {
-        acc += it.p;
-        return [it.score, Math.min(1, acc)];
+        const point = [it.score, Math.min(1, Math.max(0, remaining))];
+        remaining -= it.p;
+        return point;
       });
     };
-    const coinCdf = toCdf(result.coin.stats);
-    const supportCdf = toCdf(result.support.stats);
-    const minX = Math.min(coinCdf[0]?.[0] ?? 0, supportCdf[0]?.[0] ?? 0);
-    const maxX = Math.max(coinCdf.at(-1)?.[0] ?? 0, supportCdf.at(-1)?.[0] ?? 0, model.full);
+    const coinReach = toReach(result.coin.stats);
+    const supportReach = toReach(result.support.stats);
+    const minX = Math.min(coinReach[0]?.[0] ?? 0, supportReach[0]?.[0] ?? 0);
+    const maxX = Math.max(coinReach.at(-1)?.[0] ?? 0, supportReach.at(-1)?.[0] ?? 0, model.full);
     makeChart('cdf-chart', {
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
@@ -1140,7 +1141,7 @@
       legend: legendStyle(p, ['均匀分布', '按支持率加权选边']),
       tooltip: tooltipStyle(p, (params) => {
         const score = params[0]?.value?.[0];
-        return `<b>得分 ${fmt(score)}</b><br>` + params
+        return `<b>达到 ${fmt(score)} 分</b><br>` + params
           .map((item) => `${item.marker}${esc(item.seriesName)} <b style="float:right;margin-left:18px">${pct(item.value?.[1])}</b>`)
           .join('<br>');
       }),
@@ -1163,7 +1164,7 @@
           type: 'line',
           step: 'end',
           showSymbol: false,
-          data: coinCdf,
+          data: coinReach,
           lineStyle: { color: p.gold, width: 2 },
           itemStyle: { color: p.gold },
           emphasis: { focus: 'series' },
@@ -1189,7 +1190,7 @@
           type: 'line',
           step: 'end',
           showSymbol: false,
-          data: supportCdf,
+          data: supportReach,
           lineStyle: { color: p.jade, width: 2 },
           itemStyle: { color: p.jade },
           emphasis: { focus: 'series' }
@@ -1474,7 +1475,7 @@
     renderStrategyCumChart(model, result);
     renderStrategyFinalChart(model, result);
     renderHistChart(model, result);
-    renderCdfChart(model, result);
+    renderReachChart(model, result);
     renderDailyBandChart(model, result);
     renderOddsChart(model, result);
     renderFavoriteChart(model, result);
