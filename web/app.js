@@ -552,9 +552,15 @@
     ).join('');
     const bodyHtml = rows.map((row) => {
       const cls = row.__class || '';
-      const cells = row.cells.map((cell, i) =>
-        `<td class="${numericCols.includes(i) ? 'num' : ''}" data-label="${esc(headers[i] || '')}">${cell}</td>`
-      ).join('');
+      let index = 0;
+      const cells = row.cells.map((cell) => {
+        const spec = typeof cell === 'object' && cell !== null ? cell : { html: cell };
+        const colspan = spec.colspan || 1;
+        const isNum = !spec.colspan && numericCols.includes(index);
+        const label = spec.label ?? (spec.colspan ? '' : headers[index] || '');
+        index += colspan;
+        return `<td class="${isNum ? 'num' : ''}" data-label="${esc(label)}"${spec.colspan ? ` colspan="${spec.colspan}"` : ''}>${spec.html}</td>`;
+      }).join('');
       return `<tr class="${cls}">${cells}</tr>`;
     }).join('');
     return `<table>${options.caption ? `<caption>${esc(options.caption)}</caption>` : ''}<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
@@ -741,17 +747,24 @@
   }
 
   function renderGodPlan(model, result) {
+    let cumulative = 0;
     const rows = result.god.plan.map((row) => {
       const m = row.match;
-      const bet = row.stake > 0 && m
-        ? `<span>第 ${m.match} 场 · <span class="winner-cell">${SIDE_LABEL[m.winner]}</span> · ${m.winnerMult}×</span>`
-        : '<span class="faint">不押</span>';
+      cumulative += row.points;
+      const action = row.stake > 0 && m
+        ? [
+            `第 ${m.match} 场`,
+            `<span class="winner-cell">${SIDE_LABEL[m.winner]}</span>`,
+            `${m.winnerMult}×`
+          ]
+        : [{ html: '<span class="faint">不押</span>', colspan: 3, label: '下注' }];
       return {
         cells: [
           `第 ${row.day} 天`,
-          bet,
+          ...action,
           row.stake > 0 ? fmt(row.stake) : '<span class="faint">0</span>',
           row.points > 0 ? `<span class="gold">${fmt(row.points)}</span>` : '<span class="faint">0</span>',
+          fmt(cumulative),
           fmt(row.balanceAfter)
         ]
       };
@@ -760,16 +773,17 @@
       __class: 'total-row',
       cells: [
         '合计',
-        `${result.god.plan.filter((p) => p.stake > 0).length} 次下注`,
+        { html: `${result.god.plan.filter((p) => p.stake > 0).length} 次下注`, colspan: 3, label: '下注' },
         fmt(result.god.used),
+        fmt(result.god.total),
         fmt(result.god.total),
         fmt(result.god.plan[result.god.plan.length - 1]?.balanceAfter ?? 0)
       ]
     });
     $('#god-plan-table').innerHTML = table(
-      ['天', '下注', '押注券', '当日得分', '日终余额'],
+      ['天', '场', '方向', '倍率', '押注券', '当日得分', '累积得分', '日终余额'],
       rows,
-      [2, 3, 4]
+      [3, 4, 5, 6, 7]
     );
     $('#god-prefixes').innerHTML = `<span>如果只考虑到当天：</span>` +
       result.godPrefixes.map((g) => `<span class="pill"><b>D${g.horizon}</b> ${fmt(g.total)}</span>`).join('<span class="arrow">→</span>') +
