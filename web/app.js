@@ -743,20 +743,13 @@
   function renderGodPlan(model, result) {
     const rows = result.god.plan.map((row) => {
       const m = row.match;
-      const matchLabel = m ? `${m.match}` : '—';
-      const side = m ? SIDE_LABEL[m.winner] : '—';
-      const teamName = m?.teams?.[m.winner];
-      const support = m ? `${m.support[m.winner]}%` : '—';
-      const mult = m ? `${m.winnerMult}×` : '—';
+      const bet = row.stake > 0 && m
+        ? `<span>第 ${m.match} 场 · <span class="winner-cell">${SIDE_LABEL[m.winner]}</span> · ${m.winnerMult}×</span>`
+        : '<span class="faint">不押</span>';
       return {
         cells: [
           `第 ${row.day} 天`,
-          matchLabel,
-          row.stake > 0
-            ? `<span class="winner-cell">${side}${teamName ? ` · ${esc(teamName)}` : ''}</span>`
-            : '<span class="faint">不押</span>',
-          support,
-          mult,
+          bet,
           row.stake > 0 ? fmt(row.stake) : '<span class="faint">0</span>',
           row.points > 0 ? `<span class="gold">${fmt(row.points)}</span>` : '<span class="faint">0</span>',
           fmt(row.balanceAfter)
@@ -768,18 +761,15 @@
       cells: [
         '合计',
         `${result.god.plan.filter((p) => p.stake > 0).length} 次下注`,
-        '—',
-        '—',
-        '—',
         fmt(result.god.used),
         fmt(result.god.total),
         fmt(result.god.plan[result.god.plan.length - 1]?.balanceAfter ?? 0)
       ]
     });
     $('#god-plan-table').innerHTML = table(
-      ['天', '场', '方向', '支持率', '倍率', '押注券', '当日得分', '日终余额'],
+      ['天', '下注', '押注券', '当日得分', '日终余额'],
       rows,
-      [3, 4, 5, 6, 7]
+      [2, 3, 4]
     );
     $('#god-prefixes').innerHTML = `<span>如果只考虑到当天：</span>` +
       result.godPrefixes.map((g) => `<span class="pill"><b>D${g.horizon}</b> ${fmt(g.total)}</span>`).join('<span class="arrow">→</span>') +
