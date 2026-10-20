@@ -454,8 +454,10 @@
   }
 
   function computeBuckets(model) {
+    const bucketIndex = (support) =>
+      Math.min(9, Math.max(0, Math.floor((support - 1) / 10)));
     const buckets = Array.from({ length: 10 }, (_, i) => ({
-      min: i * 10,
+      min: i === 0 ? 0 : i * 10 + 1,
       max: i * 10 + 10,
       points: [],
       favoriteWins: 0,
@@ -464,7 +466,7 @@
     const oddsPoints = [];
     for (const m of model.matches) {
       if (m.favorite) {
-        const idx = Math.min(9, Math.floor(m.support[m.favorite] / 10));
+        const idx = bucketIndex(m.support[m.favorite]);
         buckets[idx].favoriteN += 1;
         if (m.winner === m.favorite) buckets[idx].favoriteWins += 1;
       }
@@ -479,8 +481,7 @@
             known: m.rawOdds[side] !== null
           };
           oddsPoints.push(point);
-          const idx = Math.min(9, Math.floor(point.support / 10));
-          buckets[idx].points.push(point);
+          buckets[bucketIndex(point.support)].points.push(point);
         }
       }
     }
