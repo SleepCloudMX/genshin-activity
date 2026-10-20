@@ -795,8 +795,8 @@
       `<span class="pair"><span class="pair-left ${leftClass}">${left}</span><span class="pair-sep">:</span><span class="pair-right ${rightClass}">${right}</span></span>`;
     const rows = model.matches.map((m) => {
       const support = pair(
-        `左 ${m.support.left}`,
-        `右 ${m.support.right}`,
+        m.support.left,
+        m.support.right,
         m.favorite === 'left' ? 'winner-cell' : '',
         m.favorite === 'right' ? 'winner-cell' : ''
       );
@@ -820,7 +820,7 @@
       return {
         cells: [
           `第 ${m.day} 天`,
-          `${m.match}${m.teams ? `<span class="sub-line">${esc(m.teams.left)} vs ${esc(m.teams.right)}</span>` : ''}`,
+          `<span>${m.match}${m.teams ? `<span class="sub-line">${esc(m.teams.left)} vs ${esc(m.teams.right)}</span>` : ''}</span>`,
           support,
           odds,
           settlement,
@@ -830,10 +830,10 @@
       };
     });
     $('#match-table').innerHTML = table(
-      ['天', '场', '支持率（左:右）', '赛前赔率（左:右）', '结算倍率（左:右）', '胜方', '类型'],
+      ['天', '场', '支持率', '赛前赔率', '结算倍率', '胜方', '类型'],
       rows,
       [2, 3, 4]
-    ) + `<p class="table-note">— 表示未记录。另有 ${model.missingLoserOdds} 个败方赛前赔率缺失。</p>`;
+    ) + `<p class="table-note">支持率、赛前赔率、结算倍率按「左 : 右」显示；— 表示未记录。另有 ${model.missingLoserOdds} 个败方赛前赔率缺失。</p>`;
   }
 
   function renderMethodNotes(model, result) {
