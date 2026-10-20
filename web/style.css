@@ -437,36 +437,6 @@ html[data-theme="dark"] .icon-moon { display: none; }
   font-weight: 600;
 }
 
-/* ---------- insights ---------- */
-
-.insights-panel { margin-top: 14px; }
-
-.insights {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 32px;
-}
-
-.insight {
-  position: relative;
-  padding-left: 14px;
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.insight::before {
-  content: "";
-  position: absolute;
-  top: .68em;
-  left: 0;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.insight b { font-weight: 600; }
-
 /* ---------- charts ---------- */
 
 .chart { width: 100%; height: 380px; }
@@ -733,7 +703,6 @@ tbody tr:hover { background: var(--surface); }
 @media (max-width: 1000px) {
   .grid-2 { grid-template-columns: 1fr; }
   .method-grid { grid-template-columns: 1fr; }
-  .insights { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {

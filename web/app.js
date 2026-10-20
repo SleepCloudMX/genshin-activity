@@ -487,35 +487,6 @@
     return { buckets, oddsPoints };
   }
 
-  function computeInsights(model, result) {
-    const byId = Object.fromEntries(result.deterministic.map((s) => [s.id, s]));
-    const left = byId['all-left'];
-    const right = byId['all-right'];
-    const items = [];
-
-    items.push(`每场 50 券：全押左累计 ${fmt(left.total)} 分（${left.wins}/${model.matches.length} 胜），全押右累计 ${fmt(right.total)} 分（${right.wins}/${model.matches.length} 胜）。`);
-
-    items.push(`随机下注达到 ${fmt(model.full)} 分的概率：均匀随机 ${pct(result.coin.stats.pFull)}，以支持率为概率 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
-
-    const byOdds = new Map();
-    for (const point of result.buckets.oddsPoints) {
-      if (!byOdds.has(point.odds)) byOdds.set(point.odds, []);
-      byOdds.get(point.odds).push(point.support);
-    }
-    const segments = [...byOdds.entries()]
-      .sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]))
-      .map(([odds, supports]) => {
-        const min = Math.min(...supports);
-        const max = Math.max(...supports);
-        return `${min === max ? `${min}%` : `${min}–${max}%`} 为 ${odds} 倍`;
-      });
-    items.push(`支持率与赔率呈阶梯关系：${segments.join('，')}。`);
-
-    const oracle = result.deterministic.find((s) => s.id === 'oracle-fixed');
-    items.push(`上帝视角投完所有券：上界 ${fmt(result.god.total)}（全部押中），下界 ${fmt(result.godLower)}（全部押错）；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
-    return items;
-  }
-
   function computeAnalysis(model) {
     const deterministic = STRATEGY_DEFS.map((def) => runFixedStrategy(model, def));
     const coin = randomStrategy(model, () => 0.5);
@@ -540,7 +511,6 @@
       buckets,
       base: model.stake * model.losing * model.matches.length
     };
-    result.insights = computeInsights(model, result);
     return result;
   }
 
@@ -663,12 +633,6 @@
       ])
     ];
     $('#kpis').innerHTML = cards.join('');
-  }
-
-  function renderInsights(result) {
-    $('#insights').innerHTML = result.insights.map((text) =>
-      `<div class="insight">${text}</div>`
-    ).join('');
   }
 
   // ---------- tables ----------
@@ -1511,7 +1475,6 @@
   function renderAll(model, result) {
     renderHeader(model, result);
     renderKpis(model, result);
-    renderInsights(result);
     renderStrategyTable(model, result);
     renderRandomTable(model, result);
     renderBucketTable(model, result);
