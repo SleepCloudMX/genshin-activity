@@ -495,7 +495,7 @@
 
     items.push(`每场 50 券：全押左累计 ${fmt(left.total)} 分（${left.wins}/${model.matches.length} 胜），全押右累计 ${fmt(right.total)} 分（${right.wins}/${model.matches.length} 胜）。`);
 
-    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：均匀分布 ${pct(result.coin.stats.pFull)}，按支持率加权 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
+    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：均匀随机 ${pct(result.coin.stats.pFull)}，以支持率为概率 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
 
     const byOdds = new Map();
     for (const point of result.buckets.oddsPoints) {
@@ -512,7 +512,7 @@
     items.push(`支持率与赔率呈阶梯关系：${segments.join('，')}。`);
 
     const oracle = result.deterministic.find((s) => s.id === 'oracle-fixed');
-    items.push(`上帝视角用满券：上界 ${fmt(result.god.total)}（全部押中），下界 ${fmt(result.godLower)}（全部押错）；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
+    items.push(`上帝视角投完所有券：上界 ${fmt(result.god.total)}（全部押中），下界 ${fmt(result.godLower)}（全部押错）；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
     return items;
   }
 
@@ -631,27 +631,27 @@
     const hot = byId['majority'];
     const cold = byId['minority'];
     const cards = [
-      kpiPair('固定选边', [
+      kpiPair('固定每场押 50', [
         { label: '全押左', value: fmt(left.total), sub: wins(left) },
         { label: '全押右', value: fmt(right.total), sub: wins(right) }
       ]),
-      kpiPair('按支持率选边', [
+      kpiPair('按支持率选队押 50', [
         { label: '押热门', value: fmt(hot.total), sub: wins(hot) },
         { label: '押冷门', value: fmt(cold.total), sub: wins(cold) }
       ]),
-      kpiPair('随机选边 · 达到满奖励概率', [
+      kpiPair('随机选队押 50·拿满奖励概率', [
         {
           label: '均匀随机',
           value: pct(result.coin.stats.pFull),
           sub: `期望得分 ${fmt(result.coin.stats.mean)}`
         },
         {
-          label: '按支持率加权',
+          label: '以支持率为概率',
           value: pct(result.support.stats.pFull),
           sub: `期望得分 ${fmt(result.support.stats.mean)}`
         }
       ], 'accent'),
-      kpiPair('上帝视角 · 用满券', [
+      kpiPair('上帝视角·投完所有券', [
         { label: '上界', value: fmt(result.god.total), sub: '全部押中' },
         { label: '下界', value: fmt(result.godLower), sub: '全部押错' }
       ])
@@ -687,7 +687,7 @@
       };
     });
     $('#strategy-table').innerHTML = table(
-      ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '均匀分布分位', '按支持率加权分位'],
+      ['策略', '总得分', '其中加成', '胜场', '胜场均倍率', '满奖励', '均匀随机分位', '以支持率为概率分位'],
       rows,
       [1, 2, 3, 4, 6, 7]
     ) + `<p class="table-note">分位 = 该随机策略得分不超过此得分的概率。</p>`;
@@ -695,8 +695,8 @@
 
   function renderRandomTable(model, result) {
     const rows = [
-      { name: '均匀分布', stats: result.coin.stats },
-      { name: '按支持率加权', stats: result.support.stats }
+      { name: '均匀随机', stats: result.coin.stats },
+      { name: '以支持率为概率', stats: result.support.stats }
     ].map(({ name, stats }) => ({
       cells: [
         esc(name),
@@ -716,7 +716,7 @@
       ['策略', '期望', '中位数', 'P20', 'P80', 'P5', 'P95', '最低', '最高', `P(≥${fmt(model.full)})`, `P(≥${fmt(model.original)})`],
       rows,
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ) + `<p class="table-note">均匀分布：每场 50 券，左右两边等概率。按支持率加权：每场 50 券，按双方支持率决定选边概率。</p>`;
+    ) + `<p class="table-note">均匀随机：每场 50 券，左右两边等概率。以支持率为概率：每场 50 券，选边概率等于双方支持率。</p>`;
   }
 
   function renderBucketTable(model, result) {
@@ -1086,7 +1086,7 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['均匀分布', '按支持率加权选边']),
+      legend: legendStyle(p, ['均匀随机', '以支持率为概率']),
       tooltip: tooltipStyle(p, (params) => {
         const idx = params[0].dataIndex;
         const bin = hist.bins[idx];
@@ -1105,7 +1105,7 @@
       }),
       series: [
         {
-          name: '均匀分布',
+          name: '均匀随机',
           type: 'bar',
           data: hist.coin,
           barGap: '8%',
@@ -1129,7 +1129,7 @@
           }
         },
         {
-          name: '按支持率加权选边',
+          name: '以支持率为概率',
           type: 'bar',
           data: hist.support,
           itemStyle: { color: p.jade, opacity: 0.82 },
@@ -1157,7 +1157,7 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['均匀分布', '按支持率加权选边']),
+      legend: legendStyle(p, ['均匀随机', '以支持率为概率']),
       tooltip: tooltipStyle(p, (params) => {
         const score = params[0]?.value?.[0];
         return `<b>达到 ${fmt(score)} 分</b><br>` + params
@@ -1179,7 +1179,7 @@
       }),
       series: [
         {
-          name: '均匀分布',
+          name: '均匀随机',
           type: 'line',
           step: 'end',
           showSymbol: false,
@@ -1205,7 +1205,7 @@
           }
         },
         {
-          name: '按支持率加权选边',
+          name: '以支持率为概率',
           type: 'line',
           step: 'end',
           showSymbol: false,
@@ -1263,12 +1263,12 @@
       backgroundColor: 'transparent',
       textStyle: { fontFamily: FONT_BODY, color: p.text },
       animationDuration: 650,
-      legend: legendStyle(p, ['均匀分布中位数', '按支持率加权中位数']),
+      legend: legendStyle(p, ['均匀随机中位数', '以支持率为概率中位数']),
       tooltip: tooltipStyle(p, (params) => {
         const idx = params[0]?.dataIndex ?? 0;
         const rows = [
-          { name: '均匀分布', color: p.gold, stats: coin[idx] },
-          { name: '按支持率加权', color: p.jade, stats: support[idx] }
+          { name: '均匀随机', color: p.gold, stats: coin[idx] },
+          { name: '以支持率为概率', color: p.jade, stats: support[idx] }
         ];
         return `<div class="chart-tip">
           <div class="chart-tip-title">第 ${days[idx]} 天 · 累计得分</div>
@@ -1290,8 +1290,8 @@
         labels: { formatter: (v) => compact(v) }
       }),
       series: [
-        ...bandSeries('均匀分布', coin, p.gold, p.coinBand, 'coinBand'),
-        ...bandSeries('按支持率加权', support, p.jade, p.supportBand, 'supportBand')
+        ...bandSeries('均匀随机', coin, p.gold, p.coinBand, 'coinBand'),
+        ...bandSeries('以支持率为概率', support, p.jade, p.supportBand, 'supportBand')
       ].map((series, index) => {
         if (index === 2) series.markLine = thresholdMarkLines(p, model.full, model.original);
         return series;
