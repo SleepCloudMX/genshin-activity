@@ -79,8 +79,6 @@
   const shortName = (name) => ({
     '全押左': '全左',
     '全押右': '全右',
-    '押支持率高的一方': '押热门',
-    '押支持率低的一方': '押冷门',
     '全押中（固定 50/场）': '全押中'
   }[name] || name);
 
@@ -269,8 +267,8 @@
   const STRATEGY_DEFS = [
     { id: 'all-left', name: '全押左', pick: () => 'left' },
     { id: 'all-right', name: '全押右', pick: () => 'right' },
-    { id: 'majority', name: '押支持率高的一方', pick: (m) => m.favorite || 'left' },
-    { id: 'minority', name: '押支持率低的一方', pick: (m) => m.underdog || 'right' },
+    { id: 'majority', name: '押热门', pick: (m) => m.favorite || 'left' },
+    { id: 'minority', name: '押冷门', pick: (m) => m.underdog || 'right' },
     { id: 'oracle-fixed', name: '全押中（固定 50/场）', pick: (m) => m.winner, reference: true }
   ];
 
@@ -514,7 +512,7 @@
     items.push(`支持率与赔率呈阶梯关系：${segments.join('，')}。`);
 
     const oracle = result.deterministic.find((s) => s.id === 'oracle-fixed');
-    items.push(`上帝视角上界 ${fmt(result.god.total)}；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
+    items.push(`上帝视角用满券：上界 ${fmt(result.god.total)}（全部押中），下界 ${fmt(result.godLower)}（全部押错）；固定 50 券全部命中为 ${fmt(oracle?.total || 0)}。`);
     return items;
   }
 
@@ -537,6 +535,7 @@
       coin,
       support,
       god,
+      godLower: god.granted * model.losing,
       godPrefixes,
       buckets,
       base: model.stake * model.losing * model.matches.length
@@ -561,11 +560,15 @@
     return `<table>${options.caption ? `<caption>${esc(options.caption)}</caption>` : ''}<thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
   }
 
-  function kpi(label, value, sub, accent = '') {
-    return `<article class="kpi ${accent}">
+  function kpiPair(label, cells, accent = '') {
+    const body = cells.map((cell) => `<div class="kpi-cell">
+      <div class="kpi-cell-label">${esc(cell.label)}</div>
+      <div class="kpi-value">${cell.value}</div>
+      <div class="kpi-sub">${cell.sub}</div>
+    </div>`).join('');
+    return `<article class="kpi kpi-split ${accent}">
       <div class="kpi-label">${esc(label)}</div>
-      <div class="kpi-value">${value}</div>
-      <div class="kpi-sub">${sub}</div>
+      <div class="kpi-pair">${body}</div>
     </article>`;
   }
 
@@ -616,28 +619,44 @@
     setText('#activity-meta-main', `已记录 ${model.days.length}/${model.totalDays} 天 · ${model.matches.length}/${model.expectedMatches} 场`);
     setText('#activity-meta-updated', `更新于 ${model.lastUpdated}`);
     setText('#overview-caption', '基于已记录场次 · 固定与随机策略按每场 50 券评估');
+    $('#reward-note').innerHTML = `奖励线：<b>${fmt(model.original)}</b> 分拿满原石 · <b>${fmt(model.full)}</b> 分拿满奖励`;
     setText('#data-caption', `已记录 ${model.matches.length} 场 · 赔率点 ${result.buckets.oddsPoints.length} 个`);
   }
 
   function renderKpis(model, result) {
     const byId = Object.fromEntries(result.deterministic.map((s) => [s.id, s]));
-    const vsFull = (strategy) => {
-      const delta = strategy.total - model.full;
-      return delta >= 0 ? `满奖励 +${fmt(delta)}` : `满奖励 −${fmt(-delta)}`;
-    };
+    const wins = (strategy) => `${strategy.wins}/${model.matches.length} 胜`;
     const left = byId['all-left'];
     const right = byId['all-right'];
-    const kpis = [
-      kpi('全押左', fmt(left.total),
-        `${left.wins}/${model.matches.length} 胜 · ${vsFull(left)}`),
-      kpi('全押右', fmt(right.total),
-        `${right.wins}/${model.matches.length} 胜 · ${vsFull(right)}`),
-      kpi('均匀随机', pct(result.coin.stats.pFull),
-        `达到 ${fmt(model.full)}；<span class="nowrap">按支持率加权 ${pct(result.support.stats.pFull)}</span>`, 'accent'),
-      kpi('上帝视角上界', fmt(result.god.total),
-        `已用 ${fmt(result.god.used)} 券`)
+    const hot = byId['majority'];
+    const cold = byId['minority'];
+    const cards = [
+      kpiPair('固定选边', [
+        { label: '全押左', value: fmt(left.total), sub: wins(left) },
+        { label: '全押右', value: fmt(right.total), sub: wins(right) }
+      ]),
+      kpiPair('按支持率选边', [
+        { label: '押热门', value: fmt(hot.total), sub: wins(hot) },
+        { label: '押冷门', value: fmt(cold.total), sub: wins(cold) }
+      ]),
+      kpiPair('随机选边 · 达到满奖励概率', [
+        {
+          label: '均匀随机',
+          value: pct(result.coin.stats.pFull),
+          sub: `期望得分 ${fmt(result.coin.stats.mean)}`
+        },
+        {
+          label: '按支持率加权',
+          value: pct(result.support.stats.pFull),
+          sub: `期望得分 ${fmt(result.support.stats.mean)}`
+        }
+      ], 'accent'),
+      kpiPair('上帝视角 · 用满券', [
+        { label: '上界', value: fmt(result.god.total), sub: '全部押中' },
+        { label: '下界', value: fmt(result.godLower), sub: '全部押错' }
+      ])
     ];
-    $('#kpis').innerHTML = kpis.join('');
+    $('#kpis').innerHTML = cards.join('');
   }
 
   function renderInsights(result) {
@@ -1615,6 +1634,7 @@
       },
       god: {
         total: result.god.total,
+        lower: result.godLower,
         used: result.god.used,
         plan: result.god.plan.map((p) => ({
           day: p.day,
