@@ -275,6 +275,14 @@ html[data-theme="dark"] .icon-moon { display: none; }
   font-size: 13px;
 }
 
+.activity-position {
+  max-width: 68ch;
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
 /* ---------- sections ---------- */
 
 .section { padding-top: clamp(48px, 6vw, 72px); }

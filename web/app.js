@@ -495,7 +495,7 @@
 
     items.push(`每场 50 券：全押左累计 ${fmt(left.total)} 分（${left.wins}/${model.matches.length} 胜），全押右累计 ${fmt(right.total)} 分（${right.wins}/${model.matches.length} 胜）。`);
 
-    items.push(`随机选边达到 ${fmt(model.full)} 分的概率：均匀随机 ${pct(result.coin.stats.pFull)}，以支持率为概率 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
+    items.push(`随机下注达到 ${fmt(model.full)} 分的概率：均匀随机 ${pct(result.coin.stats.pFull)}，以支持率为概率 ${pct(result.support.stats.pFull)}；期望分别为 ${fmt(result.coin.stats.mean)} 与 ${fmt(result.support.stats.mean)}。`);
 
     const byOdds = new Map();
     for (const point of result.buckets.oddsPoints) {
@@ -722,7 +722,7 @@
       ['策略', '期望', '中位数', 'P20', 'P80', 'P5', 'P95', '最低', '最高', `P(≥${fmt(model.full)})`, `P(≥${fmt(model.original)})`],
       rows,
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ) + `<p class="table-note">均匀随机：每场 50 券，左右两边等概率。以支持率为概率：每场 50 券，选边概率等于双方支持率。</p>`;
+    ) + `<p class="table-note">均匀随机：每场 50 券，左右两边等概率。以支持率为概率：每场 50 券，押左或押右的概率分别等于双方支持率。</p>`;
   }
 
   function renderBucketTable(model, result) {
@@ -839,15 +839,15 @@
   function renderMethodNotes(model, result) {
     $('#method-notes').innerHTML = `<ul>
       <li><strong>得分</strong>：押 n 券，按结算倍率获得积分；押错固定 10 倍。</li>
-      <li><strong>固定策略</strong>：每场 50 券，比较全押左、全押右、押热门、押冷门四种选边方式。</li>
-      <li><strong>随机策略</strong>：每场 50 券，按概率选边，穷举所有可能结果。</li>
+      <li><strong>固定策略</strong>：每场 50 券，比较全押左、全押右、押热门、押冷门四种下注方式。</li>
+      <li><strong>随机策略</strong>：每场 50 券，按概率决定押哪一方，穷举所有可能结果。</li>
       <li><strong>上帝视角上界</strong>：假设提前知道胜负；每天开始时发 ${model.dailyGrant} 券，最多持有 ${model.holdingCap} 券，可以攒券集中下注。</li>
       <li><strong>奖励线</strong>：${fmt(model.original)} 分原始奖励；${fmt(model.full)} 分满奖励。</li>
       <li><strong>回测范围</strong>：已记录 ${model.matches.length} 场。</li>
     </ul>`;
     $('#caveats').innerHTML = `<ul>
       <li>每场 50 券是被评估策略的假设，不是活动规则。</li>
-      <li>随机策略只让选边随机，比赛结果按已记录事实固定。</li>
+      <li>随机策略只让押哪一方随机，比赛结果按已记录事实固定。</li>
       <li>押热门/冷门以收盘支持率为准。</li>
       <li>上帝视角是理论上界，不是可执行策略。</li>
       <li>败方赛前赔率大多未记录，赔率观测中只包含已知点。</li>
