@@ -7,7 +7,7 @@ window.ACTIVITY_INDEX = [
     version: "7.1",
     phase: "上半",
     startDate: "2026-10-12",
-    status: "进行中",
+    status: "已结束",
     dataFile: "data/7.1-261012.js",
     description: "支持率、倍率与下注策略回测。"
   }
